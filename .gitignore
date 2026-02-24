@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OMEN — trade secrets and local database
+companies.txt
+prompts/
+proprietary/
+omen.db
+omen.db-journal
+
+# Drizzle generated migrations (committed per-project preference — remove this
+# line if you want to commit migration files to source control)
+drizzle/
