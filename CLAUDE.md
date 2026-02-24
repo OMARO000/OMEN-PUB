@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repositories
+
+| Repo | URL | Contents |
+|---|---|---|
+| **OMEN-PUB** | `https://github.com/OMARO000/OMEN-PUB.git` | This codebase — public Next.js app |
+| **OMEN-PRI** | `https://github.com/OMARO000/OMEN-PRI.git` | Trade secrets — `companies.txt`, `AI_RESEARCH_PROMPT.md` |
+
+Local paths: `~/Documents/OMEN/omen-app` (pub) · `~/Documents/omen/omen-private` (pri)
+
 ## Project
 
 **OMEN** — Corporate Accountability Intelligence Operating System, built by OMARO Public Benefit Corporation. A permanent public record for tracking corporate conduct.
@@ -69,7 +78,7 @@ Next.js 16 app using the **App Router** (`/app` directory). TypeScript strict mo
 ## Security & Validation
 
 - Zod schemas required for all inputs — add to `lib/validations.ts`
-- Rate limiting middleware stub in `middleware.ts` (full implementation in Phase 3)
+- Rate limiting middleware stub in `proxy.ts` (full implementation in Phase 3)
 - Error boundaries on all route pages
 - Trade secrets (companies list, AI prompts) loaded from env vars only — never hardcoded
 - `.gitignore` covers: `.env*`, `companies.txt`, `prompts/`, `proprietary/`, `omen.db`, `drizzle/`
