@@ -20,9 +20,9 @@ export default function APIDocsError({ error, reset }: ErrorProps) {
       </p>
       <button
         onClick={reset}
-        style={{ background: 'transparent', border: '1px solid var(--omen-border)', color: 'var(--omen-text)', padding: '0.5rem 1rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem' }}
+        style={{ background: 'transparent', border: '1px solid var(--omen-border)', color: 'var(--omen-text)', padding: '0.5rem 1rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem', letterSpacing: '0.05em' }}
       >
-        Try again
+        TRY AGAIN &gt;
       </button>
     </div>
   );

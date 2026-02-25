@@ -41,16 +41,16 @@ export default function HomePage() {
             START HERE
           </h2>
           <nav aria-label="Quick links" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <Link href="/ledger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none' }}>
-              <span>Browse the Ledger</span>
+            <Link href="/ledger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none', letterSpacing: '0.05em' }}>
+              <span>VIEW LEDGER &gt;</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>All records</span>
             </Link>
-            <Link href="/legal-battles" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none' }}>
-              <span>Legal Battles</span>
+            <Link href="/legal-battles" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none', letterSpacing: '0.05em' }}>
+              <span>LEGAL BATTLES &gt;</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Attacks on OMEN</span>
             </Link>
-            <Link href="/about" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none' }}>
-              <span>About OMARO</span>
+            <Link href="/about" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', textDecoration: 'none', letterSpacing: '0.05em' }}>
+              <span>ABOUT &gt;</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Who we are</span>
             </Link>
           </nav>
@@ -62,19 +62,23 @@ export default function HomePage() {
           </h2>
           <dl style={{ display: 'grid', gap: '0.5rem', maxWidth: '480px' }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
-              <dt style={{ fontWeight: 700, color: 'var(--tag-ugly)', minWidth: '140px' }}>UGLY</dt>
+              <dt style={{ fontWeight: 700, color: 'var(--tag-ugly)', minWidth: '160px' }}>UGLY</dt>
               <dd style={{ margin: 0, color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Egregious harm or abuse</dd>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
-              <dt style={{ fontWeight: 700, color: 'var(--tag-broken-promise)', minWidth: '140px' }}>BROKEN PROMISE</dt>
+              <dt style={{ fontWeight: 700, color: 'var(--tag-broken-promise)', minWidth: '160px' }}>BROKEN PROMISE</dt>
               <dd style={{ margin: 0, color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Public commitment, not kept</dd>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
-              <dt style={{ fontWeight: 700, color: 'var(--tag-bad)', minWidth: '140px' }}>BAD</dt>
+              <dt style={{ fontWeight: 700, color: 'var(--tag-bad)', minWidth: '160px' }}>BAD</dt>
               <dd style={{ margin: 0, color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Harmful but common conduct</dd>
             </div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
-              <dt style={{ fontWeight: 700, color: 'var(--tag-good)', minWidth: '140px' }}>GOOD</dt>
+              <dt style={{ fontWeight: 700, color: 'var(--tag-questionable)', minWidth: '160px' }}>QUESTIONABLE</dt>
+              <dd style={{ margin: 0, color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Under investigation or alleged</dd>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline' }}>
+              <dt style={{ fontWeight: 700, color: 'var(--tag-good)', minWidth: '160px' }}>GOOD</dt>
               <dd style={{ margin: 0, color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Verified positive action</dd>
             </div>
           </dl>

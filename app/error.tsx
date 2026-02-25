@@ -38,9 +38,10 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           cursor: 'pointer',
           fontFamily: 'inherit',
           fontSize: '0.875rem',
+          letterSpacing: '0.05em',
         }}
       >
-        Try again
+        TRY AGAIN &gt;
       </button>
     </div>
   );
