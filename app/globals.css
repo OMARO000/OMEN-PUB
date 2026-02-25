@@ -5,16 +5,17 @@
    --------------------------------------------------------------------------- */
 
 :root {
-  --omen-bg: #1a1a1a;
-  --omen-text: #f5f5dc;
-  --omen-border: #3a3a3a;
-  --omen-muted: #9a9a8a;
-  --omen-surface: #242424;
+  --omen-bg: #e8e8e8;
+  --omen-text: #000000;
+  --omen-border: #ababab;
+  --omen-muted: #5a5a5a;
+  --omen-surface: #dcdcdc;
 
   /* ViolationTag colors */
   --tag-ugly: #8b0000;
   --tag-broken-promise: #d4af37;
   --tag-bad: #cd853f;
+  --tag-questionable: #708090;
   --tag-good: #228b22;
 }
 
@@ -35,7 +36,7 @@ html {
 body {
   background: var(--omen-bg);
   color: var(--omen-text);
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas,
+  font-family: var(--font-ibm-plex-mono), ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas,
     'DejaVu Sans Mono', monospace;
   line-height: 1.6;
   margin: 0;
@@ -142,6 +143,10 @@ a:hover {
 
 .tag-bad {
   color: var(--tag-bad);
+}
+
+.tag-questionable {
+  color: var(--tag-questionable);
 }
 
 .tag-good {
