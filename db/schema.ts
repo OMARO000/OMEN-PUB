@@ -5,7 +5,7 @@ import { relations } from 'drizzle-orm';
 // ViolationTag
 // ---------------------------------------------------------------------------
 
-export const VIOLATION_TAGS = ['GOOD', 'BAD', 'UGLY', 'BROKEN_PROMISE'] as const;
+export const VIOLATION_TAGS = ['GOOD', 'BAD', 'UGLY', 'BROKEN_PROMISE', 'QUESTIONABLE'] as const;
 export type ViolationTag = (typeof VIOLATION_TAGS)[number];
 
 // ---------------------------------------------------------------------------
