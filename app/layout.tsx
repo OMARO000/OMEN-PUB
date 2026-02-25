@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
 import './globals.css';
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -12,12 +20,12 @@ export const metadata: Metadata = {
 };
 
 const NAV_LINKS = [
-  { href: '/ledger', label: 'Ledger' },
-  { href: '/legal-battles', label: 'Legal Battles' },
-  { href: '/oca', label: 'OCA' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/api', label: 'API' },
-  { href: '/about', label: 'About' },
+  { href: '/ledger', label: 'LEDGER >' },
+  { href: '/dashboard', label: 'DASHBOARD >' },
+  { href: '/oca', label: 'OCA >' },
+  { href: '/about', label: 'ABOUT >' },
+  { href: '/api', label: 'API >' },
+  { href: '/legal-battles', label: 'LEGAL >' },
 ];
 
 export default function RootLayout({
@@ -26,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={ibmPlexMono.variable}>
       <body>
         <a href="#main-content" className="skip-nav">
           Skip to main content
@@ -62,7 +70,7 @@ export default function RootLayout({
                   <li key={href}>
                     <Link
                       href={href}
-                      style={{ fontSize: '0.875rem', opacity: 0.8, textDecoration: 'none' }}
+                      style={{ fontSize: '0.875rem', opacity: 0.8, textDecoration: 'none', letterSpacing: '0.05em' }}
                     >
                       {label}
                     </Link>
