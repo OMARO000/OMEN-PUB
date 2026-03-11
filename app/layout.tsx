@@ -23,6 +23,8 @@ export const metadata: Metadata = {
 const NAV_LINKS = [
   { href: '/ledger', label: 'LEDGER >' },
   { href: '/dashboard', label: 'DASHBOARD >' },
+  { href: '/contribute', label: 'CONTRIBUTE >' },
+  { href: '/dashboard/earnings', label: 'EARNINGS >' },
   { href: '/oca', label: 'OCA >' },
   { href: '/about', label: 'ABOUT >' },
   { href: '/api', label: 'API >' },

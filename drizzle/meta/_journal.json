@@ -36,6 +36,13 @@
       "when": 1773202500000,
       "tag": "0004_api_clients_and_audit_log",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1773202600000,
+      "tag": "0005_contributions_and_payouts",
+      "breakpoints": true
     }
   ]
 }
