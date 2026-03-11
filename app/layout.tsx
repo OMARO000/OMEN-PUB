@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
+import Sidebar from './components/Sidebar';
 import './globals.css';
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -43,13 +44,24 @@ export default function RootLayout({
         <header
           style={{
             borderBottom: '1px solid var(--omen-border)',
-            padding: '1rem 0',
+            padding: '0.75rem 0',
+            background: 'var(--omen-sidebar)',
+            flexShrink: 0,
           }}
         >
-          <div className="container" style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+          <div
+            className="container"
+            style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}
+          >
             <Link
               href="/"
-              style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '0.1em', textDecoration: 'none' }}
+              style={{
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                letterSpacing: '0.15em',
+                textDecoration: 'none',
+                color: 'var(--omen-accent)',
+              }}
               aria-label="OMEN — Home"
             >
               OMEN
@@ -70,7 +82,12 @@ export default function RootLayout({
                   <li key={href}>
                     <Link
                       href={href}
-                      style={{ fontSize: '0.875rem', opacity: 0.8, textDecoration: 'none', letterSpacing: '0.05em' }}
+                      style={{
+                        fontSize: '0.8rem',
+                        opacity: 0.7,
+                        textDecoration: 'none',
+                        letterSpacing: '0.08em',
+                      }}
                     >
                       {label}
                     </Link>
@@ -81,23 +98,25 @@ export default function RootLayout({
           </div>
         </header>
 
-        <main id="main-content" style={{ minHeight: 'calc(100vh - 8rem)' }}>
-          {children}
-        </main>
+        <div className="app-shell">
+          <Sidebar />
+          <main id="main-content" className="main-content">
+            {children}
+          </main>
+        </div>
 
         <footer
           style={{
             borderTop: '1px solid var(--omen-border)',
-            padding: '1.5rem 0',
-            marginTop: '4rem',
-            fontSize: '0.8rem',
+            padding: '0.6rem 0',
+            fontSize: '0.75rem',
             color: 'var(--omen-muted)',
+            background: 'var(--omen-sidebar)',
+            flexShrink: 0,
           }}
         >
           <div className="container">
-            <p style={{ margin: 0 }}>
-              OMARO Public Benefit Corporation. The record stands.
-            </p>
+            <p style={{ margin: 0 }}>OMARO Public Benefit Corporation. The record stands.</p>
           </div>
         </footer>
       </body>
