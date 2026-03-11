@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { companies } from '@/db/schema';
 import type { ViolationCategory, ViolationStatus } from '@/db/schema';
+import EvidenceBlock from '@/app/components/EvidenceBlock';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,6 +42,11 @@ async function getCompany(slug: string) {
     with: {
       violations: {
         orderBy: (v, { desc }) => [desc(v.createdAt)],
+        with: {
+          evidence: {
+            orderBy: (e, { desc }) => [desc(e.credibilityScore)],
+          },
+        },
       },
     },
   });
@@ -289,6 +295,38 @@ export default async function CompanyPage({
                       `DISCOVERED: ${new Date(violation.dateDiscovered).toISOString().slice(0, 10)}`}
                   </p>
                 )}
+
+                {/* Evidence */}
+                <div style={{ marginTop: '1rem' }}>
+                  <p
+                    style={{
+                      margin: '0 0 0.4rem 0',
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.12em',
+                      color: 'var(--omen-muted)',
+                    }}
+                  >
+                    EVIDENCE
+                  </p>
+                  {violation.evidence.length === 0 ? (
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--omen-muted)' }}>
+                      -- NO EVIDENCE ON FILE --
+                    </p>
+                  ) : (
+                    violation.evidence.map((item, i) => (
+                      <EvidenceBlock
+                        key={item.id}
+                        sourceUrl={item.sourceUrl}
+                        sourceType={item.sourceType}
+                        title={item.title}
+                        documentDate={item.documentDate}
+                        credibilityScore={item.credibilityScore}
+                        archivedUrl={item.archivedUrl}
+                        isLast={i === violation.evidence.length - 1}
+                      />
+                    ))
+                  )}
+                </div>
               </li>
             ))}
           </ol>
