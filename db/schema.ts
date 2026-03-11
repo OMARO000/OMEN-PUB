@@ -42,6 +42,7 @@ export const companies = sqliteTable('companies', {
   slug: text('slug').notNull().unique(),
   description: text('description'),
   website: text('website'),
+  tier: integer('tier'), // 1–5; null = unclassified; enforced at Zod layer
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
