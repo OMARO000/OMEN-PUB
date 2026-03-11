@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES } from '@/db/schema';
+import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES, OCA_CATEGORIES } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Block
@@ -94,3 +94,42 @@ export const sourceSchema = z.object({
 });
 
 export type SourceInput = z.infer<typeof sourceSchema>;
+
+// ---------------------------------------------------------------------------
+// OCA — Submit Alternative
+// ---------------------------------------------------------------------------
+
+export const ocaSubmitSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  category: z.enum(OCA_CATEGORIES),
+  websiteUrl: z.url('Must be a valid URL'),
+  replaces: z.string().min(1, 'Required').max(100, 'Max 100 characters'),
+  whyBetter: z.string().min(1, 'Required').max(500, 'Max 500 characters'),
+  openSource: z.boolean(),
+  selfHostable: z.boolean(),
+});
+
+export type OcaSubmitInput = z.infer<typeof ocaSubmitSchema>;
+
+// ---------------------------------------------------------------------------
+// OCA — Vote
+// ---------------------------------------------------------------------------
+
+export const ocaVoteSchema = z.object({
+  alternativeId: z.number().int().positive(),
+  vote: z.enum(['up', 'down']),
+});
+
+export type OcaVoteInput = z.infer<typeof ocaVoteSchema>;
+
+// ---------------------------------------------------------------------------
+// Admin — OCA Moderation
+// ---------------------------------------------------------------------------
+
+export const ocaModerateSchema = z.object({
+  alternativeId: z.number().int().positive(),
+  action: z.enum(['approve', 'reject']),
+  reason: z.string().max(500).optional(),
+});
+
+export type OcaModerateInput = z.infer<typeof ocaModerateSchema>;
