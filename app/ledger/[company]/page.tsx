@@ -1,55 +1,50 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
+import Link from 'next/link';
 import { db } from '@/lib/db';
-import { companies } from '@/db/schema';
-import type { ViolationCategory, ViolationStatus } from '@/db/schema';
-import EvidenceBlock from '@/app/components/EvidenceBlock';
+import { companies, stagedBlocks } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function severityBar(severity: number): string {
-  const clamped = Math.max(1, Math.min(5, severity));
-  return '█'.repeat(clamped) + '░'.repeat(5 - clamped);
-}
-
-const CATEGORY_LABELS: Record<ViolationCategory, string> = {
-  FINANCIAL: 'FINANCIAL',
-  ENVIRONMENTAL: 'ENVIRONMENTAL',
-  LABOR: 'LABOR',
-  PRIVACY: 'PRIVACY',
-  ANTITRUST: 'ANTITRUST',
-  SAFETY: 'SAFETY',
-  HUMAN_RIGHTS: 'HUMAN RIGHTS',
-  CORRUPTION: 'CORRUPTION',
+const CATEGORY_META: Record<string, { label: string; color: string }> = {
+  PRI: { label: 'PRIVACY', color: '#7eb8d4' },
+  LAB: { label: 'LABOR', color: '#d4a76a' },
+  ETH: { label: 'ETHICS', color: '#c47eb8' },
+  ENV: { label: 'ENVIRONMENT', color: '#7eb87e' },
+  ANT: { label: 'ANTITRUST', color: '#d47e7e' },
 };
 
-const STATUS_COLORS: Record<ViolationStatus, string> = {
-  ACTIVE: 'var(--omen-accent)',
-  RESOLVED: 'var(--omen-muted)',
-  DISPUTED: 'var(--tag-broken-promise)',
+const TAG_COLORS: Record<string, string> = {
+  BAD: 'var(--tag-bad)',
+  UGLY: 'var(--tag-ugly)',
+  BROKEN_PROMISE: 'var(--tag-broken-promise)',
+  QUESTIONABLE: 'var(--tag-questionable)',
+  GOOD: 'var(--tag-good)',
 };
 
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
 
-async function getCompany(slug: string) {
-  return db.query.companies.findFirst({
-    where: eq(companies.slug, slug),
-    with: {
-      violations: {
-        orderBy: (v, { desc }) => [desc(v.createdAt)],
-        with: {
-          evidence: {
-            orderBy: (e, { desc }) => [desc(e.credibilityScore)],
-          },
-        },
-      },
-    },
-  });
+async function getCompanyWithBlocks(slug: string) {
+  const company = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.slug, slug))
+    .limit(1);
+
+  if (!company[0]) return null;
+
+  const blocks = await db
+    .select()
+    .from(stagedBlocks)
+    .where(eq(stagedBlocks.companyId, company[0].id))
+    .orderBy(desc(stagedBlocks.createdAt));
+
+  return { company: company[0], blocks };
 }
 
 // ---------------------------------------------------------------------------
@@ -59,14 +54,14 @@ async function getCompany(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ company: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const company = await getCompany(slug);
-  if (!company) return { title: 'Company Not Found' };
+  const { company: slug } = await params;
+  const data = await getCompanyWithBlocks(slug);
+  if (!data) return { title: 'Company Not Found' };
   return {
-    title: company.name,
-    description: `Corporate conduct record for ${company.name} — OMEN`,
+    title: data.company.name,
+    description: `Corporate conduct record for ${data.company.name} — OMEN`,
   };
 }
 
@@ -77,261 +72,239 @@ export async function generateMetadata({
 export default async function CompanyPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ company: string }>;
 }) {
-  const { slug } = await params;
-  const company = await getCompany(slug);
+  const { company: slug } = await params;
+  const data = await getCompanyWithBlocks(slug);
+  if (!data) notFound();
 
-  if (!company) notFound();
-
-  const violationCount = company.violations.length;
-  const activeCount = company.violations.filter((v) => v.status === 'ACTIVE').length;
+  const { company, blocks } = data;
+  const autoApproved = blocks.filter(b => b.confidenceRouting === 'AUTO_APPROVED').length;
+  const pending = blocks.filter(b => b.reviewStatus === 'pending').length;
+  const catBreakdown = blocks.reduce<Record<string, number>>((acc, b) => {
+    acc[b.category] = (acc[b.category] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <div className="container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
-      {/* Company header */}
-      <header style={{ marginBottom: '2.5rem' }}>
-        <p
-          style={{
-            color: 'var(--omen-muted)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.15em',
-            marginBottom: '0.5rem',
-          }}
-        >
-          CORPORATE RECORD
-        </p>
-        <h1
-          style={{
-            fontSize: '2rem',
-            marginBottom: '0.75rem',
-            color: 'var(--omen-text)',
-          }}
-        >
-          {company.name}
-        </h1>
+    <div className="container" style={{ paddingTop: '2.5rem', paddingBottom: '4rem' }}>
+      {/* Breadcrumb */}
+      <p style={{ fontSize: '0.7rem', letterSpacing: '0.12em', color: 'var(--omen-muted)', marginBottom: '1.5rem' }}>
+        <Link href="/ledger" style={{ color: 'var(--omen-muted)', textDecoration: 'none' }}>
+          LEDGER
+        </Link>
+        {' / '}
+        <span style={{ color: 'var(--omen-text)' }}>{company.ticker}</span>
+      </p>
 
-        {/* Meta row */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '2rem',
-            flexWrap: 'wrap',
-            fontSize: '0.8rem',
-            color: 'var(--omen-muted)',
-            letterSpacing: '0.06em',
-          }}
-        >
-          {company.tier != null && <span>TIER {company.tier}</span>}
-          <span>
-            {violationCount} VIOLATION{violationCount !== 1 ? 'S' : ''}
+      {/* Company header */}
+      <header style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+          <h1 style={{ fontSize: '1.75rem', margin: 0, letterSpacing: '0.03em' }}>
+            {company.name}
+          </h1>
+          <span style={{ fontSize: '0.8rem', color: 'var(--omen-accent)', letterSpacing: '0.1em', fontWeight: 700 }}>
+            {company.ticker}
           </span>
-          {activeCount > 0 && (
-            <span style={{ color: 'var(--omen-accent)' }}>
-              {activeCount} ACTIVE
+          {company.tier != null && (
+            <span style={{ fontSize: '0.7rem', color: 'var(--omen-muted)', letterSpacing: '0.08em' }}>
+              TIER {company.tier}
             </span>
-          )}
-          {company.website && (
-            <a
-              href={company.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--omen-muted)', textDecoration: 'none' }}
-            >
-              {company.website.replace(/^https?:\/\//, '')} &gt;
-            </a>
           )}
         </div>
 
-        {company.description && (
-          <p
-            style={{
-              marginTop: '1rem',
-              maxWidth: '600px',
-              color: 'var(--omen-muted)',
-              fontSize: '0.875rem',
-              lineHeight: 1.7,
-            }}
-          >
-            {company.description}
-          </p>
-        )}
+        {/* Stats row */}
+        <div style={{
+          display: 'flex',
+          gap: '2rem',
+          flexWrap: 'wrap',
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid var(--omen-border)',
+          fontSize: '0.7rem',
+          letterSpacing: '0.1em',
+        }}>
+          <span style={{ color: 'var(--omen-text)' }}>
+            <span style={{ color: 'var(--omen-muted)' }}>TOTAL BLOCKS  </span>
+            {blocks.length}
+          </span>
+          <span style={{ color: 'var(--omen-accent)' }}>
+            <span style={{ color: 'var(--omen-muted)' }}>AUTO-APPROVED  </span>
+            {autoApproved}
+          </span>
+          {pending > 0 && (
+            <span style={{ color: 'var(--tag-broken-promise)' }}>
+              <span style={{ color: 'var(--omen-muted)' }}>PENDING REVIEW  </span>
+              {pending}
+            </span>
+          )}
+          {Object.entries(catBreakdown).map(([cat, count]) => (
+            <span key={cat} style={{ color: CATEGORY_META[cat]?.color ?? 'var(--omen-muted)' }}>
+              {cat}  {count}
+            </span>
+          ))}
+        </div>
       </header>
 
-      <hr className="divider" />
+      <hr className="divider" style={{ margin: '0 0 2rem 0' }} />
 
-      {/* Violations */}
-      <section aria-labelledby="violations-heading">
-        <h2
-          id="violations-heading"
-          style={{ fontSize: '1rem', letterSpacing: '0.1em', marginBottom: '1.5rem' }}
-        >
-          VIOLATION RECORD
-        </h2>
+      {/* Block list */}
+      {blocks.length === 0 ? (
+        <p style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>
+          -- NO BLOCKS ON FILE FOR THIS COMPANY --
+        </p>
+      ) : (
+        <ol role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0' }}>
+          {blocks.map((block, index) => {
+            const catMeta = CATEGORY_META[block.category] ?? { label: block.category, color: 'var(--omen-muted)' };
+            const tagColor = TAG_COLORS[block.violationTag] ?? 'var(--omen-muted)';
+            const confPct = Math.round((block.confidenceScore ?? 0) * 100);
+            const sources: Array<{ name: string; url: string }> = (() => {
+              try { return JSON.parse(block.sourcesJson ?? '[]'); } catch { return []; }
+            })();
 
-        {violationCount === 0 ? (
-          <p style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>
-            -- NO RECORDS FOUND --
-          </p>
-        ) : (
-          <ol
-            role="list"
-            style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0',
-            }}
-          >
-            {company.violations.map((violation, index) => (
+            return (
               <li
-                key={violation.id}
+                key={block.blockId}
+                id={block.blockId}
                 style={{
                   borderTop: index === 0 ? '1px solid var(--omen-border)' : 'none',
                   borderBottom: '1px solid var(--omen-border)',
-                  padding: '1rem 0',
+                  padding: '1.5rem 0',
                 }}
               >
-                {/* Top row: category + status */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '1rem',
-                    alignItems: 'baseline',
-                    marginBottom: '0.4rem',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.12em',
-                      color: 'var(--omen-muted)',
-                      border: '1px solid var(--omen-border)',
-                      padding: '0.1rem 0.4rem',
-                    }}
-                  >
-                    {CATEGORY_LABELS[violation.category]}
+                {/* Block header row */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'baseline', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--omen-muted)', fontFamily: 'inherit' }}>
+                    {block.blockId}
                   </span>
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.1em',
-                      color: STATUS_COLORS[violation.status],
-                    }}
-                  >
-                    {violation.status}
+                  <span style={{ fontSize: '0.65rem', letterSpacing: '0.1em', color: catMeta.color }}>
+                    {catMeta.label}
+                  </span>
+                  <span style={{ fontSize: '0.65rem', letterSpacing: '0.08em', color: tagColor }}>
+                    {block.violationTag.replace('_', ' ')}
+                  </span>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.08em',
+                    color: confPct >= 93 ? 'var(--omen-accent)' : 'var(--tag-bad)',
+                    marginLeft: 'auto',
+                  }}>
+                    {confPct >= 93 ? 'AUTO-APPROVED' : 'REVIEW'} · {confPct}%
                   </span>
                 </div>
 
                 {/* Title */}
-                <p
-                  style={{
-                    margin: '0 0 0.5rem 0',
-                    fontSize: '0.95rem',
-                    color: 'var(--omen-text)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {violation.title}
-                </p>
+                <h2 style={{ fontSize: '1rem', margin: '0 0 1rem 0', fontWeight: 700, lineHeight: 1.4, maxWidth: '700px' }}>
+                  {block.title}
+                </h2>
 
-                {/* Severity bar + description row */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '1.5rem',
-                    alignItems: 'flex-start',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: 'inherit',
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.05em',
-                      color:
-                        violation.severity >= 4
-                          ? 'var(--tag-ugly)'
-                          : violation.severity === 3
-                            ? 'var(--tag-bad)'
-                            : 'var(--omen-muted)',
-                      flexShrink: 0,
-                    }}
-                    title={`Severity ${violation.severity} of 5`}
-                    aria-label={`Severity ${violation.severity} of 5`}
-                  >
-                    {severityBar(violation.severity)}
-                  </span>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '0.8rem',
-                      color: 'var(--omen-muted)',
-                      lineHeight: 1.6,
-                      maxWidth: '560px',
-                    }}
-                  >
-                    {violation.description}
+                {/* Formal summary */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <p style={{ margin: '0 0 0.3rem', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--omen-muted)' }}>
+                    FORMAL SUMMARY
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--omen-text)', lineHeight: 1.7, maxWidth: '680px' }}>
+                    {block.formalSummary}
                   </p>
                 </div>
 
-                {/* Date row */}
-                {(violation.dateOccurred ?? violation.dateDiscovered) && (
-                  <p
-                    style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '0.7rem',
-                      color: 'var(--omen-muted)',
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {violation.dateOccurred &&
-                      `OCCURRED: ${new Date(violation.dateOccurred).toISOString().slice(0, 10)}`}
-                    {violation.dateOccurred && violation.dateDiscovered && '  ·  '}
-                    {violation.dateDiscovered &&
-                      `DISCOVERED: ${new Date(violation.dateDiscovered).toISOString().slice(0, 10)}`}
-                  </p>
+                {/* Plain English */}
+                {block.conversationalWhatHappened && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <p style={{ margin: '0 0 0.3rem', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--omen-muted)' }}>
+                      WHAT HAPPENED
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--omen-muted)', lineHeight: 1.7, maxWidth: '680px' }}>
+                      {block.conversationalWhatHappened}
+                    </p>
+                  </div>
                 )}
 
-                {/* Evidence */}
-                <div style={{ marginTop: '1rem' }}>
-                  <p
-                    style={{
-                      margin: '0 0 0.4rem 0',
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.12em',
-                      color: 'var(--omen-muted)',
-                    }}
-                  >
-                    EVIDENCE
-                  </p>
-                  {violation.evidence.length === 0 ? (
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--omen-muted)' }}>
-                      -- NO EVIDENCE ON FILE --
-                    </p>
-                  ) : (
-                    violation.evidence.map((item, i) => (
-                      <EvidenceBlock
-                        key={item.id}
-                        sourceUrl={item.sourceUrl}
-                        sourceType={item.sourceType}
-                        title={item.title}
-                        documentDate={item.documentDate}
-                        credibilityScore={item.credibilityScore}
-                        archivedUrl={item.archivedUrl}
-                        isLast={i === violation.evidence.length - 1}
-                      />
-                    ))
+                {/* Enforcement + regulatory row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem', maxWidth: '680px' }}>
+                  {block.regulatoryBasis && (
+                    <div>
+                      <p style={{ margin: '0 0 0.3rem', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--omen-muted)' }}>
+                        REGULATORY BASIS
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--omen-text)', lineHeight: 1.6 }}>
+                        {block.regulatoryBasis}
+                      </p>
+                    </div>
+                  )}
+                  {block.jurisdiction && (
+                    <div>
+                      <p style={{ margin: '0 0 0.3rem', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--omen-muted)' }}>
+                        JURISDICTION
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--omen-text)', lineHeight: 1.6 }}>
+                        {block.jurisdiction}
+                      </p>
+                    </div>
                   )}
                 </div>
+
+                {/* Financials */}
+                {block.amount != null && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <p style={{ margin: '0 0 0.3rem', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--omen-muted)' }}>
+                      FINANCIAL PENALTY
+                    </p>
+                    <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--tag-ugly)' }}>
+                      {block.amountCurrency ?? 'USD'} {Number(block.amount).toLocaleString()}
+                      {block.affectedIndividuals != null && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--omen-muted)', fontWeight: 400, marginLeft: '1rem' }}>
+                          {Number(block.affectedIndividuals).toLocaleString()} INDIVIDUALS AFFECTED
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Sources */}
+                {sources.length > 0 && (
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <p style={{ margin: '0 0 0.4rem', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--omen-muted)' }}>
+                      SOURCES
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      {sources.map((s, i) => (
+                        <li key={i} style={{ fontSize: '0.72rem' }}>
+                          <a
+                            href={s.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'var(--omen-muted)', textDecoration: 'none' }}
+                          >
+                            <span style={{ color: 'var(--omen-accent)', marginRight: '0.4rem' }}>›</span>
+                            {s.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* IPFS CID */}
+                {block.ipfsCid && (
+                  <p style={{ margin: '0.75rem 0 0', fontSize: '0.65rem', color: 'var(--omen-muted)', letterSpacing: '0.04em' }}>
+                    IPFS{' '}
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${block.ipfsCid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--omen-accent)', textDecoration: 'none', fontFamily: 'inherit' }}
+                    >
+                      {block.ipfsCid}
+                    </a>
+                  </p>
+                )}
               </li>
-            ))}
-          </ol>
-        )}
-      </section>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }
