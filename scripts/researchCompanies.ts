@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { researchCompany } from '../lib/agent/researchAgent';
 import { companies, stagedBlocks } from '../db/schema';
+import { pinBlock } from '../lib/ipfs';
 import type { Company, RawBlock, AgentRunConfig } from '../lib/agent/types';
 import { DEFAULT_AGENT_CONFIG } from '../lib/agent/types';
 
@@ -70,16 +71,21 @@ async function upsertCompany(company: Company): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
-// Stage blocks from a raw agent response
+// Stage blocks — pin AUTO_APPROVED immediately, hold the rest
 // ---------------------------------------------------------------------------
 
-async function stageBlocks(companyId: number, blocks: RawBlock[]): Promise<number> {
-  if (blocks.length === 0) return 0;
+async function stageBlocks(
+  companyId: number,
+  blocks: RawBlock[],
+  dryRun: boolean
+): Promise<{ staged: number; pinned: number }> {
+  if (blocks.length === 0) return { staged: 0, pinned: 0 };
 
   let staged = 0;
+  let pinned = 0;
 
   for (const block of blocks) {
-    // Skip if blockId already exists
+    // Skip duplicates
     const existing = await db
       .select({ id: stagedBlocks.id })
       .from(stagedBlocks)
@@ -89,6 +95,21 @@ async function stageBlocks(companyId: number, blocks: RawBlock[]): Promise<numbe
     if (existing.length > 0) {
       console.log(`  [SKIP] ${block.blockId} already staged`);
       continue;
+    }
+
+    // Pin AUTO_APPROVED blocks immediately; others wait for review
+    let ipfsCid: string | null = null;
+    if (!dryRun && block.confidenceRouting === 'AUTO_APPROVED') {
+      try {
+        const result = await pinBlock(block);
+        ipfsCid = result.cid;
+        pinned++;
+        console.log(`  [IPFS] ${block.blockId} → ${result.cid}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`  [IPFS ERROR] ${block.blockId}: ${msg}`);
+        // Continue — stage even if pin fails
+      }
     }
 
     await db.insert(stagedBlocks).values({
@@ -118,12 +139,15 @@ async function stageBlocks(companyId: number, blocks: RawBlock[]): Promise<numbe
         : null,
       violationDate: block.date,
       researchedAt: block.researchedAt,
+      // AUTO_APPROVED blocks get pinned and pre-approved
+      reviewStatus: block.confidenceRouting === 'AUTO_APPROVED' ? 'approved' : 'pending',
     });
 
     staged++;
+    console.log(`  [${block.confidenceRouting}] ${block.blockId} staged${ipfsCid ? ' + pinned' : ''}`);
   }
 
-  return staged;
+  return { staged, pinned };
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +170,8 @@ async function run(config: AgentRunConfig = DEFAULT_AGENT_CONFIG) {
   console.log(`\nOMEN Research Runner`);
   console.log(`Companies: ${list.length} | Batch: ${config.batchSize} | Dry run: ${config.dryRun ?? false}\n`);
 
-  let totalBlocks = 0;
+  let totalStaged = 0;
+  let totalPinned = 0;
   let totalErrors = 0;
 
   for (let i = 0; i < list.length; i++) {
@@ -167,9 +192,10 @@ async function run(config: AgentRunConfig = DEFAULT_AGENT_CONFIG) {
 
       console.log(`  → ${blocks.length} block(s) found`);
 
-      const staged = await stageBlocks(companyId, blocks);
-      console.log(`  → ${staged} staged`);
-      totalBlocks += staged;
+      const { staged, pinned } = await stageBlocks(companyId, blocks, false);
+      console.log(`  → ${staged} staged, ${pinned} pinned to IPFS`);
+      totalStaged += staged;
+      totalPinned += pinned;
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -187,7 +213,7 @@ async function run(config: AgentRunConfig = DEFAULT_AGENT_CONFIG) {
     }
   }
 
-  console.log(`\nDone. ${totalBlocks} blocks staged. ${totalErrors} errors.`);
+  console.log(`\nDone. ${totalStaged} blocks staged. ${totalPinned} pinned to IPFS. ${totalErrors} errors.`);
   sqlite.close();
 }
 
