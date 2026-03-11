@@ -4,14 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 const VIOLATION_TYPES = [
-  'FINANCIAL',
-  'ENVIRONMENTAL',
-  'LABOR',
-  'PRIVACY',
-  'ANTITRUST',
-  'SAFETY',
-  'HUMAN RIGHTS',
-  'CORRUPTION',
+  { code: 'PRI', label: 'PRIVACY' },
+  { code: 'LAB', label: 'LABOR' },
+  { code: 'ETH', label: 'ETHICS' },
+  { code: 'ENV', label: 'ENVIRONMENT' },
+  { code: 'ANT', label: 'ANTITRUST' },
 ] as const;
 
 const TIERS = [1, 2, 3, 4, 5] as const;
@@ -132,7 +129,7 @@ export default function Sidebar() {
                   {results.map((company) => (
                     <li key={company.id}>
                       <Link
-                        href={`/company/${company.slug}`}
+                        href={`/ledger/${company.slug}`}
                         className="sidebar-result-link"
                         onClick={() => setIsOpen(false)}
                       >
@@ -156,16 +153,16 @@ export default function Sidebar() {
         <div className="sidebar-section">
           <p className="sidebar-label">FILTER BY VIOLATION TYPE</p>
           <ul role="list" className="sidebar-checklist">
-            {VIOLATION_TYPES.map((type) => (
-              <li key={type}>
+            {VIOLATION_TYPES.map(({ code, label }) => (
+              <li key={code}>
                 <label className="sidebar-check-label">
                   <input
                     type="checkbox"
                     className="sidebar-checkbox"
-                    checked={violationFilters.has(type)}
-                    onChange={() => toggleViolation(type)}
+                    checked={violationFilters.has(code)}
+                    onChange={() => toggleViolation(code)}
                   />
-                  <span>{type}</span>
+                  <span>{label}</span>
                 </label>
               </li>
             ))}
