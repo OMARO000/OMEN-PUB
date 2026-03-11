@@ -52,6 +52,8 @@ export const users = sqliteTable('users', {
   isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
   paidAt: integer('paid_at', { mode: 'timestamp_ms' }),
   subscriptionId: text('subscription_id'),
+  // JSON array of ticker strings: ["META","GOOGL","AMZN"]
+  companiesTracked: text('companies_tracked').notNull().default('[]'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
