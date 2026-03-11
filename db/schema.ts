@@ -8,6 +8,30 @@ import { relations } from 'drizzle-orm';
 export const VIOLATION_TAGS = ['GOOD', 'BAD', 'UGLY', 'BROKEN_PROMISE', 'QUESTIONABLE'] as const;
 export type ViolationTag = (typeof VIOLATION_TAGS)[number];
 
+export const VIOLATION_CATEGORIES = [
+  'FINANCIAL',
+  'ENVIRONMENTAL',
+  'LABOR',
+  'PRIVACY',
+  'ANTITRUST',
+  'SAFETY',
+  'HUMAN_RIGHTS',
+  'CORRUPTION',
+] as const;
+export type ViolationCategory = (typeof VIOLATION_CATEGORIES)[number];
+
+export const VIOLATION_STATUSES = ['ACTIVE', 'RESOLVED', 'DISPUTED'] as const;
+export type ViolationStatus = (typeof VIOLATION_STATUSES)[number];
+
+export const SOURCE_TYPES = [
+  'SEC_FILING',
+  'COURT_RECORD',
+  'REGULATORY_DECISION',
+  'NEWS_REPORT',
+  'GOVERNMENT_DOCUMENT',
+] as const;
+export type SourceType = (typeof SOURCE_TYPES)[number];
+
 // ---------------------------------------------------------------------------
 // companies
 // ---------------------------------------------------------------------------
@@ -212,6 +236,55 @@ export const analyticsEvents = sqliteTable('analytics_events', {
 });
 
 // ---------------------------------------------------------------------------
+// violations
+// ---------------------------------------------------------------------------
+
+export const violations = sqliteTable('violations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  companyId: integer('company_id').notNull().references(() => companies.id),
+  category: text('category').$type<ViolationCategory>().notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  dateOccurred: integer('date_occurred', { mode: 'timestamp_ms' }),
+  dateDiscovered: integer('date_discovered', { mode: 'timestamp_ms' }),
+  severity: integer('severity').notNull(), // 1–5; enforced at Zod layer
+  status: text('status').$type<ViolationStatus>().notNull().default('ACTIVE'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// sources
+// ---------------------------------------------------------------------------
+
+export const sources = sqliteTable('sources', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  domain: text('domain').notNull(),
+  sourceType: text('source_type').$type<SourceType>().notNull(),
+  credibilityBase: integer('credibility_base').notNull().default(50), // 0–100; enforced at Zod layer
+  isApproved: integer('is_approved', { mode: 'boolean' }).notNull().default(false),
+  isBlocklisted: integer('is_blocklisted', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// evidence
+// ---------------------------------------------------------------------------
+
+export const evidence = sqliteTable('evidence', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  violationId: integer('violation_id').notNull().references(() => violations.id),
+  sourceUrl: text('source_url').notNull(),
+  sourceType: text('source_type').$type<SourceType>().notNull(),
+  title: text('title').notNull(),
+  documentDate: integer('document_date', { mode: 'timestamp_ms' }),
+  credibilityScore: integer('credibility_score').notNull().default(50), // 0–100; enforced at Zod layer
+  archivedUrl: text('archived_url'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------
 
@@ -221,6 +294,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   companyPolicies: many(companyPolicies),
   alternatives: many(alternatives),
   legalAttacks: many(legalAttacks),
+  violations: many(violations),
 }));
 
 export const blocksRelations = relations(blocks, ({ one, many }) => ({
@@ -283,3 +357,14 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
 export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
   user: one(users, { fields: [analyticsEvents.userId], references: [users.id] }),
 }));
+
+export const violationsRelations = relations(violations, ({ one, many }) => ({
+  company: one(companies, { fields: [violations.companyId], references: [companies.id] }),
+  evidence: many(evidence),
+}));
+
+export const evidenceRelations = relations(evidence, ({ one }) => ({
+  violation: one(violations, { fields: [evidence.violationId], references: [violations.id] }),
+}));
+
+export const sourcesRelations = relations(sources, () => ({}));
