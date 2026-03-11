@@ -24,25 +24,21 @@ const db = drizzle(sqlite);
 function loadCompanies(): Company[] {
   const filePath = path.resolve(process.cwd(), '../omen-private/companies.txt');
   const raw = fs.readFileSync(filePath, 'utf-8');
-  const companies: Company[] = [];
+  const result: Company[] = [];
+  let index = 1;
 
-  raw.split('\n').forEach((line, i) => {
+  raw.split('\n').forEach(line => {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) return;
-    const parts = trimmed.split(/\s+/);
+    const parts = trimmed.split('|').map(p => p.trim());
     if (parts.length < 3) return;
-    const [ticker, tierStr, ...nameParts] = parts;
+    const [ticker, name, tierStr] = parts;
     const tier = parseInt(tierStr, 10);
-    if (isNaN(tier)) return;
-    companies.push({
-      index: i + 1,
-      ticker: ticker.toUpperCase(),
-      name: nameParts.join(' '),
-      tier,
-    });
+    if (!ticker || !name || isNaN(tier)) return;
+    result.push({ index: index++, ticker, name, tier });
   });
 
-  return companies;
+  return result;
 }
 
 // ---------------------------------------------------------------------------
