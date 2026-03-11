@@ -1,23 +1,14 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
-// ViolationTag
+// Enums
 // ---------------------------------------------------------------------------
 
 export const VIOLATION_TAGS = ['GOOD', 'BAD', 'UGLY', 'BROKEN_PROMISE', 'QUESTIONABLE'] as const;
 export type ViolationTag = (typeof VIOLATION_TAGS)[number];
 
-export const VIOLATION_CATEGORIES = [
-  'FINANCIAL',
-  'ENVIRONMENTAL',
-  'LABOR',
-  'PRIVACY',
-  'ANTITRUST',
-  'SAFETY',
-  'HUMAN_RIGHTS',
-  'CORRUPTION',
-] as const;
+export const VIOLATION_CATEGORIES = ['PRI', 'LAB', 'ETH', 'ENV', 'ANT'] as const;
 export type ViolationCategory = (typeof VIOLATION_CATEGORIES)[number];
 
 export const VIOLATION_STATUSES = ['ACTIVE', 'RESOLVED', 'DISPUTED'] as const;
@@ -27,10 +18,12 @@ export const SOURCE_TYPES = [
   'SEC_FILING',
   'COURT_RECORD',
   'REGULATORY_DECISION',
-  'NEWS_REPORT',
   'GOVERNMENT_DOCUMENT',
 ] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
+
+export const CONFIDENCE_ROUTINGS = ['AUTO_APPROVED', 'QUICK_REVIEW', 'REJECTED'] as const;
+export type ConfidenceRouting = (typeof CONFIDENCE_ROUTINGS)[number];
 
 // ---------------------------------------------------------------------------
 // companies
@@ -40,9 +33,10 @@ export const companies = sqliteTable('companies', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  ticker: text('ticker').notNull().unique(),
+  tier: integer('tier'),
   description: text('description'),
   website: text('website'),
-  tier: integer('tier'), // 1–5; null = unclassified; enforced at Zod layer
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
@@ -59,33 +53,92 @@ export const users = sqliteTable('users', {
 });
 
 // ---------------------------------------------------------------------------
-// blocks
+// blocks  (approved — promoted from staged_blocks)
 // ---------------------------------------------------------------------------
 
 export const blocks = sqliteTable('blocks', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  blockId: text('block_id').notNull().unique(),           // OM-YYYY-CAT-TICKER-###
   companyId: integer('company_id').notNull().references(() => companies.id),
-  title: text('title').notNull(),
-  content: text('content').notNull(),
+  category: text('category').$type<ViolationCategory>().notNull(),
   violationTag: text('violation_tag').$type<ViolationTag>().notNull(),
-  sourceUrl: text('source_url'),
+  title: text('title').notNull(),
+  // Formal fields
+  formalSummary: text('formal_summary').notNull(),
+  regulatoryBasis: text('regulatory_basis').notNull(),
+  enforcementDetails: text('enforcement_details').notNull(),
+  jurisdiction: text('jurisdiction').notNull(),
+  // Conversational fields
+  conversationalWhatHappened: text('conversational_what_happened').notNull(),
+  conversationalWhyItMatters: text('conversational_why_it_matters').notNull(),
+  conversationalCompanyResponse: text('conversational_company_response').notNull(),
+  // Financials
+  amount: real('amount'),
+  amountCurrency: text('amount_currency'),
+  affectedIndividuals: integer('affected_individuals'),
+  // Sources (JSON array of RawSource)
+  sourcesJson: text('sources_json').notNull().default('[]'),
+  sourceDisclaimersJson: text('source_disclaimers_json').notNull().default('[]'),
+  primarySourceUrl: text('primary_source_url'),
+  // Verification
+  verificationJson: text('verification_json').notNull().default('{}'),
+  // Confidence
+  confidenceScore: real('confidence_score').notNull(),
+  confidenceRouting: text('confidence_routing').$type<ConfidenceRouting>().notNull(),
+  // Broken promise
+  brokenPromiseJson: text('broken_promise_json'),
+  // IPFS
+  ipfsCid: text('ipfs_cid'),
+  // Timestamps
+  violationDate: text('violation_date'),                  // YYYY-MM-DD from agent
+  researchedAt: text('researched_at').notNull(),
   recordedAt: integer('recorded_at', { mode: 'timestamp_ms' }),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
 // ---------------------------------------------------------------------------
-// staged_blocks
+// staged_blocks  (agent output — pending review)
 // ---------------------------------------------------------------------------
 
 export const stagedBlocks = sqliteTable('staged_blocks', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  blockId: text('block_id').notNull().unique(),           // OM-YYYY-CAT-TICKER-###
   companyId: integer('company_id').notNull().references(() => companies.id),
-  title: text('title').notNull(),
-  content: text('content').notNull(),
+  category: text('category').$type<ViolationCategory>().notNull(),
   violationTag: text('violation_tag').$type<ViolationTag>().notNull(),
-  sourceUrl: text('source_url'),
+  title: text('title').notNull(),
+  // Formal fields
+  formalSummary: text('formal_summary').notNull(),
+  regulatoryBasis: text('regulatory_basis').notNull(),
+  enforcementDetails: text('enforcement_details').notNull(),
+  jurisdiction: text('jurisdiction').notNull(),
+  // Conversational fields
+  conversationalWhatHappened: text('conversational_what_happened').notNull(),
+  conversationalWhyItMatters: text('conversational_why_it_matters').notNull(),
+  conversationalCompanyResponse: text('conversational_company_response').notNull(),
+  // Financials
+  amount: real('amount'),
+  amountCurrency: text('amount_currency'),
+  affectedIndividuals: integer('affected_individuals'),
+  // Sources
+  sourcesJson: text('sources_json').notNull().default('[]'),
+  sourceDisclaimersJson: text('source_disclaimers_json').notNull().default('[]'),
+  primarySourceUrl: text('primary_source_url'),
+  // Verification
+  verificationJson: text('verification_json').notNull().default('{}'),
+  // Confidence
+  confidenceScore: real('confidence_score').notNull(),
+  confidenceRouting: text('confidence_routing').$type<ConfidenceRouting>().notNull(),
+  // Broken promise
+  brokenPromiseJson: text('broken_promise_json'),
+  // Review
   submittedBy: integer('submitted_by').references(() => users.id),
   reviewStatus: text('review_status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
+  reviewedBy: integer('reviewed_by').references(() => users.id),
+  reviewNotes: text('review_notes'),
+  // Timestamps
+  violationDate: text('violation_date'),
+  researchedAt: text('researched_at').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -130,6 +183,48 @@ export const votes = sqliteTable('votes', {
 });
 
 // ---------------------------------------------------------------------------
+// sources  (approved source registry)
+// ---------------------------------------------------------------------------
+
+export const sources = sqliteTable('sources', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  domain: text('domain').notNull(),
+  sourceType: text('source_type').$type<SourceType>().notNull(),
+  credibilityBase: integer('credibility_base').notNull().default(50),
+  isApproved: integer('is_approved', { mode: 'boolean' }).notNull().default(false),
+  isBlocklisted: integer('is_blocklisted', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// documents  (file attachments on approved blocks)
+// ---------------------------------------------------------------------------
+
+export const documents = sqliteTable('documents', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  blockId: integer('block_id').references(() => blocks.id),
+  title: text('title').notNull(),
+  fileUrl: text('file_url').notNull(),
+  mimeType: text('mime_type'),
+  contentHash: text('content_hash'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// feedback
+// ---------------------------------------------------------------------------
+
+export const feedback = sqliteTable('feedback', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  blockId: integer('block_id').references(() => blocks.id),
+  content: text('content').notNull(),
+  feedbackType: text('feedback_type', { enum: ['correction', 'addition', 'dispute', 'general'] }).notNull().default('general'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
 // api_clients
 // ---------------------------------------------------------------------------
 
@@ -137,7 +232,7 @@ export const apiClients = sqliteTable('api_clients', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   keyHash: text('key_hash').notNull(),
-  scopes: text('scopes').notNull().default('read'), // space-separated
+  scopes: text('scopes').notNull().default('read'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
 });
@@ -190,37 +285,10 @@ export const contributions = sqliteTable('contributions', {
 export const contributionPayments = sqliteTable('contribution_payments', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   contributionId: integer('contribution_id').notNull().references(() => contributions.id),
-  processor: text('processor').notNull(), // e.g. 'stripe', 'btcpay'
+  processor: text('processor').notNull(),
   transactionId: text('transaction_id'),
   status: text('status', { enum: ['pending', 'succeeded', 'failed'] }).notNull().default('pending'),
   processedAt: integer('processed_at', { mode: 'timestamp_ms' }),
-});
-
-// ---------------------------------------------------------------------------
-// documents
-// ---------------------------------------------------------------------------
-
-export const documents = sqliteTable('documents', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  blockId: integer('block_id').references(() => blocks.id),
-  title: text('title').notNull(),
-  fileUrl: text('file_url').notNull(),
-  mimeType: text('mime_type'),
-  contentHash: text('content_hash'), // SHA-256 for integrity
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-});
-
-// ---------------------------------------------------------------------------
-// feedback
-// ---------------------------------------------------------------------------
-
-export const feedback = sqliteTable('feedback', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').references(() => users.id),
-  blockId: integer('block_id').references(() => blocks.id),
-  content: text('content').notNull(),
-  feedbackType: text('feedback_type', { enum: ['correction', 'addition', 'dispute', 'general'] }).notNull().default('general'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
 // ---------------------------------------------------------------------------
@@ -230,58 +298,9 @@ export const feedback = sqliteTable('feedback', {
 export const analyticsEvents = sqliteTable('analytics_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   event: text('event').notNull(),
-  properties: text('properties'), // JSON string
+  properties: text('properties'),
   userId: integer('user_id').references(() => users.id),
   ipHash: text('ip_hash'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-});
-
-// ---------------------------------------------------------------------------
-// violations
-// ---------------------------------------------------------------------------
-
-export const violations = sqliteTable('violations', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  companyId: integer('company_id').notNull().references(() => companies.id),
-  category: text('category').$type<ViolationCategory>().notNull(),
-  title: text('title').notNull(),
-  description: text('description').notNull(),
-  dateOccurred: integer('date_occurred', { mode: 'timestamp_ms' }),
-  dateDiscovered: integer('date_discovered', { mode: 'timestamp_ms' }),
-  severity: integer('severity').notNull(), // 1–5; enforced at Zod layer
-  status: text('status').$type<ViolationStatus>().notNull().default('ACTIVE'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-});
-
-// ---------------------------------------------------------------------------
-// sources
-// ---------------------------------------------------------------------------
-
-export const sources = sqliteTable('sources', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  domain: text('domain').notNull(),
-  sourceType: text('source_type').$type<SourceType>().notNull(),
-  credibilityBase: integer('credibility_base').notNull().default(50), // 0–100; enforced at Zod layer
-  isApproved: integer('is_approved', { mode: 'boolean' }).notNull().default(false),
-  isBlocklisted: integer('is_blocklisted', { mode: 'boolean' }).notNull().default(false),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-});
-
-// ---------------------------------------------------------------------------
-// evidence
-// ---------------------------------------------------------------------------
-
-export const evidence = sqliteTable('evidence', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  violationId: integer('violation_id').notNull().references(() => violations.id),
-  sourceUrl: text('source_url').notNull(),
-  sourceType: text('source_type').$type<SourceType>().notNull(),
-  title: text('title').notNull(),
-  documentDate: integer('document_date', { mode: 'timestamp_ms' }),
-  credibilityScore: integer('credibility_score').notNull().default(50), // 0–100; enforced at Zod layer
-  archivedUrl: text('archived_url'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -295,7 +314,6 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   companyPolicies: many(companyPolicies),
   alternatives: many(alternatives),
   legalAttacks: many(legalAttacks),
-  violations: many(violations),
 }));
 
 export const blocksRelations = relations(blocks, ({ one, many }) => ({
@@ -308,6 +326,7 @@ export const blocksRelations = relations(blocks, ({ one, many }) => ({
 export const stagedBlocksRelations = relations(stagedBlocks, ({ one }) => ({
   company: one(companies, { fields: [stagedBlocks.companyId], references: [companies.id] }),
   submitter: one(users, { fields: [stagedBlocks.submittedBy], references: [users.id] }),
+  reviewer: one(users, { fields: [stagedBlocks.reviewedBy], references: [users.id] }),
 }));
 
 export const companyPoliciesRelations = relations(companyPolicies, ({ one }) => ({
@@ -357,15 +376,6 @@ export const feedbackRelations = relations(feedback, ({ one }) => ({
 
 export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
   user: one(users, { fields: [analyticsEvents.userId], references: [users.id] }),
-}));
-
-export const violationsRelations = relations(violations, ({ one, many }) => ({
-  company: one(companies, { fields: [violations.companyId], references: [companies.id] }),
-  evidence: many(evidence),
-}));
-
-export const evidenceRelations = relations(evidence, ({ one }) => ({
-  violation: one(violations, { fields: [evidence.violationId], references: [violations.id] }),
 }));
 
 export const sourcesRelations = relations(sources, () => ({}));
