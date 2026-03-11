@@ -27,8 +27,8 @@ export default function LedgerPage() {
       </section>
 
       <section aria-label="Ledger entries">
-        <p style={{ color: 'var(--omen-muted)', fontStyle: 'italic' }}>
-          No records yet. The ledger will populate as data is entered.
+        <p style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>
+          -- No records. The ledger will populate as data is entered.
         </p>
       </section>
     </div>

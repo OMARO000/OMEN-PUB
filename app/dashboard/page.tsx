@@ -21,10 +21,10 @@ export default function DashboardPage() {
       <hr className="divider" />
 
       <section aria-labelledby="auth-notice-heading" style={{ marginBottom: '3rem' }}>
-        <h2 id="auth-notice-heading" style={{ fontSize: '1rem', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+        <h2 id="auth-notice-heading" style={{ fontSize: '1rem', letterSpacing: '0.1em', marginBottom: '1rem', color: 'var(--omen-accent)' }}>
           AUTHENTICATION REQUIRED
         </h2>
-        <p style={{ color: 'var(--omen-muted)', maxWidth: '480px', lineHeight: 1.7 }}>
+        <p style={{ color: 'var(--omen-muted)', maxWidth: '480px', lineHeight: 1.7, borderLeft: '2px solid var(--omen-accent)', paddingLeft: '1rem' }}>
           Dashboard access requires an OMEN account number. Account creation is not
           yet available — authentication ships in Phase 5.
         </p>
@@ -34,11 +34,11 @@ export default function DashboardPage() {
         <h2 id="features-heading" style={{ fontSize: '1rem', letterSpacing: '0.1em', marginBottom: '1rem' }}>
           PLANNED FEATURES
         </h2>
-        <ul style={{ color: 'var(--omen-muted)', paddingLeft: '1.25rem', lineHeight: 2 }}>
-          <li>Submit new ledger entries for review</li>
-          <li>Track status of staged submissions</li>
-          <li>Contribution history</li>
-          <li>API key management</li>
+        <ul style={{ color: 'var(--omen-muted)', paddingLeft: '1.25rem', lineHeight: 2, listStyleType: 'none' }}>
+          <li style={{ color: 'var(--omen-muted)' }}>-- Submit new ledger entries for review</li>
+          <li style={{ color: 'var(--omen-muted)' }}>-- Track status of staged submissions</li>
+          <li style={{ color: 'var(--omen-muted)' }}>-- Contribution history</li>
+          <li style={{ color: 'var(--omen-muted)' }}>-- API key management</li>
         </ul>
       </section>
     </div>
