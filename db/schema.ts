@@ -25,6 +25,12 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
 export const CONFIDENCE_ROUTINGS = ['AUTO_APPROVED', 'QUICK_REVIEW', 'REJECTED'] as const;
 export type ConfidenceRouting = (typeof CONFIDENCE_ROUTINGS)[number];
 
+export const OCA_CATEGORIES = [
+  'Email', 'Cloud', 'Social', 'Messaging', 'Browser',
+  'Search', 'OS', 'VPN', 'Finance', 'Other',
+] as const;
+export type OcaCategory = (typeof OCA_CATEGORIES)[number];
+
 // ---------------------------------------------------------------------------
 // companies
 // ---------------------------------------------------------------------------
@@ -162,27 +168,46 @@ export const companyPolicies = sqliteTable('company_policies', {
 });
 
 // ---------------------------------------------------------------------------
-// alternatives
+// alternatives  (OCA — OMEN Crowdsourced Alternatives)
 // ---------------------------------------------------------------------------
 
 export const alternatives = sqliteTable('alternatives', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  companyId: integer('company_id').notNull().references(() => companies.id),
   name: text('name').notNull(),
-  url: text('url'),
-  description: text('description'),
+  category: text('category').$type<OcaCategory>().notNull(),
+  websiteUrl: text('website_url'),
+  replaces: text('replaces'),          // "What does it replace?" max 100
+  whyBetter: text('why_better'),       // "Why is it better?" max 500
+  openSource: integer('open_source', { mode: 'boolean' }).notNull().default(false),
+  selfHostable: integer('self_hostable', { mode: 'boolean' }).notNull().default(false),
+  upvotes: integer('upvotes').notNull().default(0),
+  downvotes: integer('downvotes').notNull().default(0),
+  status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
+  rejectionReason: text('rejection_reason'),
+  submittedBy: text('submitted_by'),   // accountNumber, plain text
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
 // ---------------------------------------------------------------------------
-// votes
+// alternative_votes  (one vote per account per alternative)
+// ---------------------------------------------------------------------------
+
+export const alternativeVotes = sqliteTable('alternative_votes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  alternativeId: integer('alternative_id').notNull().references(() => alternatives.id),
+  accountNumber: text('account_number').notNull(),
+  vote: text('vote', { enum: ['up', 'down'] }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// votes  (block votes — legacy, kept for future use)
 // ---------------------------------------------------------------------------
 
 export const votes = sqliteTable('votes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull().references(() => users.id),
   blockId: integer('block_id').references(() => blocks.id),
-  alternativeId: integer('alternative_id').references(() => alternatives.id),
   value: integer('value').notNull(), // +1 or -1
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
@@ -317,7 +342,6 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   blocks: many(blocks),
   stagedBlocks: many(stagedBlocks),
   companyPolicies: many(companyPolicies),
-  alternatives: many(alternatives),
   legalAttacks: many(legalAttacks),
 }));
 
@@ -338,15 +362,17 @@ export const companyPoliciesRelations = relations(companyPolicies, ({ one }) => 
   company: one(companies, { fields: [companyPolicies.companyId], references: [companies.id] }),
 }));
 
-export const alternativesRelations = relations(alternatives, ({ one, many }) => ({
-  company: one(companies, { fields: [alternatives.companyId], references: [companies.id] }),
-  votes: many(votes),
+export const alternativesRelations = relations(alternatives, ({ many }) => ({
+  alternativeVotes: many(alternativeVotes),
+}));
+
+export const alternativeVotesRelations = relations(alternativeVotes, ({ one }) => ({
+  alternative: one(alternatives, { fields: [alternativeVotes.alternativeId], references: [alternatives.id] }),
 }));
 
 export const votesRelations = relations(votes, ({ one }) => ({
   user: one(users, { fields: [votes.userId], references: [users.id] }),
   block: one(blocks, { fields: [votes.blockId], references: [blocks.id] }),
-  alternative: one(alternatives, { fields: [votes.alternativeId], references: [alternatives.id] }),
 }));
 
 export const apiClientsRelations = relations(apiClients, ({ many }) => ({
