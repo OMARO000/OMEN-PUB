@@ -25,6 +25,9 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
 export const CONFIDENCE_ROUTINGS = ['AUTO_APPROVED', 'QUICK_REVIEW', 'REJECTED'] as const;
 export type ConfidenceRouting = (typeof CONFIDENCE_ROUTINGS)[number];
 
+export const API_TIERS = ['STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'RESTRICTED'] as const;
+export type ApiTier = (typeof API_TIERS)[number];
+
 export const OCA_CATEGORIES = [
   'Email', 'Cloud', 'Social', 'Messaging', 'Browser',
   'Search', 'OS', 'VPN', 'Finance', 'Other',
@@ -260,11 +263,13 @@ export const feedback = sqliteTable('feedback', {
 
 export const apiClients = sqliteTable('api_clients', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  keyHash: text('key_hash').notNull(),
-  scopes: text('scopes').notNull().default('read'),
+  apiKey: text('api_key').notNull().unique(),
+  clientName: text('client_name').notNull(),
+  email: text('email').notNull(),
+  useCase: text('use_case').notNull(),
+  tier: text('tier').$type<ApiTier>().notNull().default('STARTER'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-  lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
 });
 
 // ---------------------------------------------------------------------------
@@ -273,11 +278,13 @@ export const apiClients = sqliteTable('api_clients', {
 
 export const apiAuditLogs = sqliteTable('api_audit_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  clientId: integer('client_id').references(() => apiClients.id),
+  apiKey: text('api_key').notNull(),
   endpoint: text('endpoint').notNull(),
-  method: text('method').notNull(),
+  company: text('company'),
+  query: text('query'),
+  ipAddress: text('ip_address'),
+  useCase: text('use_case'),
   statusCode: integer('status_code').notNull(),
-  ipHash: text('ip_hash'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -375,13 +382,8 @@ export const votesRelations = relations(votes, ({ one }) => ({
   block: one(blocks, { fields: [votes.blockId], references: [blocks.id] }),
 }));
 
-export const apiClientsRelations = relations(apiClients, ({ many }) => ({
-  auditLogs: many(apiAuditLogs),
-}));
-
-export const apiAuditLogsRelations = relations(apiAuditLogs, ({ one }) => ({
-  client: one(apiClients, { fields: [apiAuditLogs.clientId], references: [apiClients.id] }),
-}));
+export const apiClientsRelations = relations(apiClients, () => ({}));
+export const apiAuditLogsRelations = relations(apiAuditLogs, () => ({}));
 
 export const legalAttacksRelations = relations(legalAttacks, ({ one }) => ({
   company: one(companies, { fields: [legalAttacks.companyId], references: [companies.id] }),
