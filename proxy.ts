@@ -1,26 +1,24 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// TODO Phase 3: Implement sliding-window rate limiting.
-// Recommended approach: use an edge-compatible KV store (e.g. Upstash Redis)
-// with a token bucket or fixed-window counter keyed by hashed IP.
-// Return 429 with Retry-After header when limit is exceeded.
+const ADMIN_COOKIE = 'omen_admin_token';
 
 export function proxy(request: NextRequest) {
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
+  const { pathname } = request.nextUrl;
 
-  // Stub: pass all requests through; log the IP for future rate-limit wiring.
-  const response = NextResponse.next();
-  response.headers.set('X-OMEN-Version', '0.1.0');
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+    const token = request.cookies.get(ADMIN_COOKIE)?.value;
+    const secret = process.env.ADMIN_SECRET;
 
-  void ip; // referenced above, will be used when rate limiting is implemented
+    if (!secret || token !== secret) {
+      const loginUrl = new URL('/admin/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/admin/:path*'],
 };
