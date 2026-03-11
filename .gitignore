@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -47,9 +48,8 @@ proprietary/
 omen.db
 omen.db-journal
 
-# Drizzle generated migrations (committed per-project preference — remove this
-# line if you want to commit migration files to source control)
-drizzle/
+# Drizzle migrations tracked in source control
+# drizzle/
 .claude/
 omen.db-shm
 omen.db-wal

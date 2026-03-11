@@ -25,6 +25,18 @@ function checkRateLimit(ip: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/auth/verify-account — session check (used by pay page)
+// ---------------------------------------------------------------------------
+
+export async function GET(request: NextRequest) {
+  const session = request.cookies.get('omen_session')?.value;
+  if (!session) {
+    return NextResponse.json({ valid: false }, { status: 401 });
+  }
+  return NextResponse.json({ valid: true });
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/auth/verify-account
 // ---------------------------------------------------------------------------
 
@@ -51,7 +63,7 @@ export async function POST(request: NextRequest) {
   const normalized = `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12, 16)}`;
 
   const rows = await db
-    .select({ id: users.id, accountNumber: users.accountNumber })
+    .select({ id: users.id, accountNumber: users.accountNumber, isPaid: users.isPaid })
     .from(users)
     .where(eq(users.accountNumber, normalized))
     .limit(1);
@@ -60,8 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, isPaid: false });
   }
 
-  // isPaid: Stripe integration deferred to Phase 5 — always false until then
-  const response = NextResponse.json({ valid: true, isPaid: false });
+  const response = NextResponse.json({ valid: true, isPaid: rows[0].isPaid ?? false });
 
   response.cookies.set('omen_session', normalized, {
     httpOnly: true,

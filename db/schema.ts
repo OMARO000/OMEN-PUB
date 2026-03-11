@@ -49,6 +49,9 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   accountNumber: text('account_number').notNull().unique(),
   role: text('role', { enum: ['contributor', 'reviewer', 'admin'] }).notNull().default('contributor'),
+  isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
+  paidAt: integer('paid_at', { mode: 'timestamp_ms' }),
+  subscriptionId: text('subscription_id'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
