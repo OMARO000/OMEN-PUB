@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES, OCA_CATEGORIES } from '@/db/schema';
+import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES, OCA_CATEGORIES, CONTRIBUTION_TYPES, PAYOUT_METHODS } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Block
@@ -133,3 +133,43 @@ export const ocaModerateSchema = z.object({
 });
 
 export type OcaModerateInput = z.infer<typeof ocaModerateSchema>;
+
+// ---------------------------------------------------------------------------
+// Contribution — Submit
+// ---------------------------------------------------------------------------
+
+export const contributionSubmitSchema = z.object({
+  type: z.enum(CONTRIBUTION_TYPES),
+  title: z.string().min(1, 'Title is required').max(300),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(5000),
+  fileUrl: z.url('Must be a valid URL').optional().or(z.literal('')),
+  companyTicker: z.string().max(20).optional(),
+  blockId: z.string().max(100).optional(),
+});
+
+export type ContributionSubmitInput = z.infer<typeof contributionSubmitSchema>;
+
+// ---------------------------------------------------------------------------
+// Contribution — Withdraw
+// ---------------------------------------------------------------------------
+
+export const withdrawSchema = z.object({
+  amount: z.number().positive('Amount must be positive'),
+  payoutMethod: z.enum(PAYOUT_METHODS),
+  payoutAddress: z.string().max(500).optional(),
+});
+
+export type WithdrawInput = z.infer<typeof withdrawSchema>;
+
+// ---------------------------------------------------------------------------
+// Admin — Review Contribution
+// ---------------------------------------------------------------------------
+
+export const adminReviewContributionSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  quality: z.enum(['low', 'medium', 'high']).optional(),
+  rewardAmount: z.number().nonnegative().optional(),
+  rejectionReason: z.string().max(500).optional(),
+});
+
+export type AdminReviewContributionInput = z.infer<typeof adminReviewContributionSchema>;

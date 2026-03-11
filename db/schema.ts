@@ -28,6 +28,18 @@ export type ConfidenceRouting = (typeof CONFIDENCE_ROUTINGS)[number];
 export const API_TIERS = ['STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'RESTRICTED'] as const;
 export type ApiTier = (typeof API_TIERS)[number];
 
+export const CONTRIBUTION_TYPES = [
+  'BREACH_REPORT',
+  'POLICY_CHANGE',
+  'COURT_DOCUMENT',
+  'TRANSLATION',
+  'OCA_CONTRIBUTION',
+] as const;
+export type ContributionType = (typeof CONTRIBUTION_TYPES)[number];
+
+export const PAYOUT_METHODS = ['MONERO', 'USDC', 'FIAT'] as const;
+export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
+
 export const OCA_CATEGORIES = [
   'Email', 'Cloud', 'Social', 'Messaging', 'Browser',
   'Search', 'OS', 'VPN', 'Finance', 'Other',
@@ -63,6 +75,7 @@ export const users = sqliteTable('users', {
   subscriptionId: text('subscription_id'),
   // JSON array of ticker strings: ["META","GOOGL","AMZN"]
   companiesTracked: text('companies_tracked').notNull().default('[]'),
+  bonusBalance: real('bonus_balance').notNull().default(0.0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -303,29 +316,39 @@ export const legalAttacks = sqliteTable('legal_attacks', {
 });
 
 // ---------------------------------------------------------------------------
-// contributions
+// contributions  (Data Co-op — user-submitted data)
 // ---------------------------------------------------------------------------
 
 export const contributions = sqliteTable('contributions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').references(() => users.id),
-  amountCents: integer('amount_cents').notNull(),
-  currency: text('currency').notNull().default('USD'),
-  status: text('status', { enum: ['pending', 'completed', 'failed', 'refunded'] }).notNull().default('pending'),
+  accountNumber: text('account_number').notNull(),
+  type: text('type').$type<ContributionType>().notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  fileUrl: text('file_url'),
+  companyTicker: text('company_ticker'),
+  blockId: text('block_id'),
+  status: text('status', { enum: ['pending', 'approved', 'rejected', 'paid'] }).notNull().default('pending'),
+  rewardAmount: real('reward_amount'),
+  rejectionReason: text('rejection_reason'),
+  reviewedAt: integer('reviewed_at', { mode: 'timestamp_ms' }),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 });
 
 // ---------------------------------------------------------------------------
-// contribution_payments
+// contribution_payments  (withdrawal requests)
 // ---------------------------------------------------------------------------
 
 export const contributionPayments = sqliteTable('contribution_payments', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  contributionId: integer('contribution_id').notNull().references(() => contributions.id),
-  processor: text('processor').notNull(),
-  transactionId: text('transaction_id'),
-  status: text('status', { enum: ['pending', 'succeeded', 'failed'] }).notNull().default('pending'),
+  accountNumber: text('account_number').notNull(),
+  amount: real('amount').notNull(),
+  payoutMethod: text('payout_method').$type<PayoutMethod>().notNull(),
+  payoutAddress: text('payout_address'),
+  status: text('status', { enum: ['pending', 'processing', 'completed', 'failed'] }).notNull().default('pending'),
+  requestedAt: integer('requested_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
   processedAt: integer('processed_at', { mode: 'timestamp_ms' }),
+  notes: text('notes'),
 });
 
 // ---------------------------------------------------------------------------
@@ -389,14 +412,8 @@ export const legalAttacksRelations = relations(legalAttacks, ({ one }) => ({
   company: one(companies, { fields: [legalAttacks.companyId], references: [companies.id] }),
 }));
 
-export const contributionsRelations = relations(contributions, ({ one, many }) => ({
-  user: one(users, { fields: [contributions.userId], references: [users.id] }),
-  payments: many(contributionPayments),
-}));
-
-export const contributionPaymentsRelations = relations(contributionPayments, ({ one }) => ({
-  contribution: one(contributions, { fields: [contributionPayments.contributionId], references: [contributions.id] }),
-}));
+export const contributionsRelations = relations(contributions, () => ({}));
+export const contributionPaymentsRelations = relations(contributionPayments, () => ({}));
 
 export const documentsRelations = relations(documents, ({ one }) => ({
   block: one(blocks, { fields: [documents.blockId], references: [blocks.id] }),
