@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 const VIOLATION_TYPES = [
   'FINANCIAL',
@@ -15,11 +16,51 @@ const VIOLATION_TYPES = [
 
 const TIERS = [1, 2, 3, 4, 5] as const;
 
+type CompanyResult = {
+  id: number;
+  name: string;
+  slug: string;
+  tier: number | null;
+};
+
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [results, setResults] = useState<CompanyResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [violationFilters, setViolationFilters] = useState<Set<string>>(new Set());
   const [tierFilters, setTierFilters] = useState<Set<number>>(new Set());
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!search.trim()) {
+      setResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ search: search.trim() });
+        const res = await fetch(`/api/companies?${params}`);
+        if (res.ok) {
+          const data: CompanyResult[] = await res.json();
+          setResults(data);
+        }
+      } catch {
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search]);
 
   function toggleViolation(type: string) {
     setViolationFilters((prev) => {
@@ -76,6 +117,37 @@ export default function Sidebar() {
               spellCheck={false}
             />
           </div>
+
+          {/* Search results */}
+          {(isSearching || results.length > 0 || (search.trim() && !isSearching)) && (
+            <div aria-live="polite" aria-label="Search results">
+              {isSearching && (
+                <p className="sidebar-search-status">searching...</p>
+              )}
+              {!isSearching && search.trim() && results.length === 0 && (
+                <p className="sidebar-search-status">-- no results</p>
+              )}
+              {!isSearching && results.length > 0 && (
+                <ul role="list" className="sidebar-results">
+                  {results.map((company) => (
+                    <li key={company.id}>
+                      <Link
+                        href={`/company/${company.slug}`}
+                        className="sidebar-result-link"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <span className="sidebar-result-prefix" aria-hidden="true">&gt;</span>
+                        <span className="sidebar-result-name">{company.name}</span>
+                        {company.tier != null && (
+                          <span className="sidebar-result-tier">T{company.tier}</span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="sidebar-divider" />
