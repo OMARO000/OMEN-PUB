@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
 import Sidebar from './components/Sidebar';
+import InstallPrompt from './components/InstallPrompt';
 import './globals.css';
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -38,6 +39,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={ibmPlexMono.variable}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0a0a0a" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <meta name="apple-mobile-web-app-title" content="OMEN" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) {
+                      console.log('OMEN SW registered');
+                    })
+                    .catch(function(err) {
+                      console.log('SW registration failed:', err);
+                    });
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body>
         <a href="#main-content" className="skip-nav">
           Skip to main content
@@ -121,6 +147,8 @@ export default function RootLayout({
             <p style={{ margin: 0 }}>OMARO Public Benefit Corporation. The record stands.</p>
           </div>
         </footer>
+
+        <InstallPrompt />
       </body>
     </html>
   );
