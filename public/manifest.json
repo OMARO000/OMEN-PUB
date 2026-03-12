@@ -1,0 +1,37 @@
+{
+  "name": "OMEN Ledger",
+  "short_name": "OMEN",
+  "description": "The permanent corporate accountability ledger",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["news", "finance", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Ledger",
+      "url": "/ledger",
+      "description": "Browse all violations"
+    },
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Your exposure score"
+    }
+  ]
+}
