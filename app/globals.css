@@ -186,7 +186,8 @@ a:hover {
   width: var(--sidebar-width);
   flex-shrink: 0;
   background: var(--omen-sidebar);
-  border-right: 1px solid var(--omen-border);
+  border-left: 1px solid var(--omen-border);
+  border-right: none;
   overflow-y: auto;
   padding: 1.25rem 1rem;
 }
@@ -353,11 +354,13 @@ a:hover {
     display: block;
     position: fixed;
     top: var(--header-height);
-    left: 0;
+    right: 0;
+    left: auto;
     z-index: 200;
     background: var(--omen-sidebar);
     border: 1px solid var(--omen-border);
-    border-left: none;
+    border-right: none;
+    border-left: 1px solid var(--omen-border);
     border-top: none;
     color: var(--omen-accent);
     font-family: inherit;
@@ -375,12 +378,13 @@ a:hover {
     display: none;
     position: fixed;
     top: 0;
-    left: 0;
+    right: 0;
     bottom: 0;
     z-index: 100;
     width: var(--sidebar-width);
     overflow-y: auto;
-    border-right: 1px solid var(--omen-border);
+    border-left: 1px solid var(--omen-border);
+    border-right: none;
   }
 
   .sidebar--open {
