@@ -151,7 +151,7 @@ export default async function CompanyPage({
       {/* Block list */}
       {blocks.length === 0 ? (
         <p style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>
-          -- NO BLOCKS ON FILE FOR THIS COMPANY --
+          [ no blocks on file ]
         </p>
       ) : (
         <ol role="list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0' }}>
