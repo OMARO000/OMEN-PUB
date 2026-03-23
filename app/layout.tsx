@@ -72,32 +72,34 @@ export default function RootLayout({
         <header
           style={{
             borderBottom: '1px solid var(--omen-border)',
-            padding: '0.75rem 0',
+            padding: '1rem 0',
             background: 'var(--omen-sidebar)',
             flexShrink: 0,
           }}
         >
           <div
             className="container"
-            style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'nowrap' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}
           >
             <Link
               href="/"
               style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 400,
-                fontSize: '1.1rem',
-                letterSpacing: '0.15em',
+                gap: '0.25rem',
                 textDecoration: 'none',
-                color: 'var(--omen-accent)',
                 flexShrink: 0,
               }}
               aria-label="OMEN — Home"
             >
-              <img src="/omen_logo.svg" alt="" width="32" height="32" style={{ display: 'block' }} />
-              OMEN
+              <img src="/omen_logo.svg" alt="" width="52" height="52" style={{ display: 'block' }} />
+              <span style={{
+                fontWeight: 400,
+                fontSize: '0.8rem',
+                letterSpacing: '0.2em',
+                color: 'var(--omen-accent)',
+              }}>OMEN</span>
             </Link>
             <nav aria-label="Primary navigation">
               <ul
