@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PAYOUT_METHODS } from '@/db/schema';
 import type { PayoutMethod } from '@/db/schema';
-import { MINIMUM_PAYOUT } from '@/lib/contributions/payout';
+import { MINIMUM_PAYOUT } from '@/lib/contributions/constants';
 
 interface Contribution {
   id: number;
