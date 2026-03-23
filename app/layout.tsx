@@ -40,12 +40,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={ibmPlexMono.variable}>
       <head>
+        <link rel="icon" type="image/svg+xml" href="/omen_logo.svg" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0a0a0a" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="OMEN" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/omen_logo.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -84,15 +85,20 @@ export default function RootLayout({
             <Link
               href="/"
               style={{
-                fontWeight: 400,
-                fontSize: '1.1rem',
-                letterSpacing: '0.15em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
                 textDecoration: 'none',
-                color: 'var(--omen-accent)',
               }}
               aria-label="OMEN — Home"
             >
-              OMEN
+              <img src="/omen_logo.svg" alt="" width="28" height="28" style={{ display: 'block' }} />
+              <span style={{
+                fontWeight: 400,
+                fontSize: '1.1rem',
+                letterSpacing: '0.15em',
+                color: 'var(--omen-accent)',
+              }}>OMEN</span>
             </Link>
             <nav aria-label="Primary navigation">
               <ul
