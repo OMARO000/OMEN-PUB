@@ -400,6 +400,13 @@ a:hover {
   flex: 1;
   overflow-y: auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main-content > * {
+  width: 100%;
 }
 
 /* ---------------------------------------------------------------------------
@@ -408,9 +415,9 @@ a:hover {
 
 .container {
   width: 100%;
-  max-width: 960px;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
 }
 
 .divider {
