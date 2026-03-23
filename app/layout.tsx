@@ -79,19 +79,24 @@ export default function RootLayout({
         >
           <div
             className="container"
-            style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'nowrap', overflow: 'hidden' }}
           >
             <Link
               href="/"
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
                 fontWeight: 400,
                 fontSize: '1.1rem',
                 letterSpacing: '0.15em',
                 textDecoration: 'none',
                 color: 'var(--omen-accent)',
+                flexShrink: 0,
               }}
               aria-label="OMEN — Home"
             >
+              <img src="/omen_logo.svg" alt="" width="24" height="24" style={{ display: 'block' }} />
               OMEN
             </Link>
             <nav aria-label="Primary navigation">
