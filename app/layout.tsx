@@ -69,67 +69,51 @@ export default function RootLayout({
           Skip to main content
         </a>
 
-        {/* Corner logo — outside header flow */}
-        <div style={{
-          position: 'fixed',
-          top: '1rem',
-          left: '1rem',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0rem',
-        }}>
-          <Link href="/" style={{ textDecoration: 'none' }} aria-label="OMEN — Home">
-            <img src="/omen_logo.svg" alt="" width="320" height="320" style={{ display: 'block' }} />
-            <span style={{
-              display: 'block',
-              textAlign: 'center',
-              fontWeight: 400,
-              fontSize: '1.8rem',
-              letterSpacing: '0.2em',
-              color: 'var(--omen-accent)',
-              marginTop: '-2rem',
-            }}>OMEN</span>
-          </Link>
-        </div>
-
-        <header
-          style={{
-            borderBottom: '1px solid var(--omen-border)',
-            padding: '1rem 0',
-            background: 'var(--omen-sidebar)',
+        <div className="app-shell">
+          {/* Left sidebar — logo + nav */}
+          <div style={{
+            width: '360px',
             flexShrink: 0,
-          }}
-        >
-          <div
-            className="container"
-            style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}
-          >
-            <nav aria-label="Primary navigation">
-              <ul
-                role="list"
-                style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  margin: 0,
-                  padding: 0,
-                  listStyle: 'none',
-                  flexWrap: 'nowrap',
-                }}
-              >
+            background: 'var(--omen-sidebar)',
+            borderRight: '1px solid var(--omen-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}>
+            <Link href="/" style={{ textDecoration: 'none' }} aria-label="OMEN — Home">
+              <img src="/omen_logo.svg" alt="" width="320" height="320" style={{ display: 'block' }} />
+              <span style={{
+                display: 'block',
+                textAlign: 'center',
+                fontWeight: 400,
+                fontSize: '1.8rem',
+                letterSpacing: '0.2em',
+                color: 'var(--omen-accent)',
+                marginTop: '-2rem',
+              }}>OMEN</span>
+            </Link>
+
+            <nav aria-label="Primary navigation" style={{ marginTop: '2rem' }}>
+              <ul role="list" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                margin: 0,
+                padding: 0,
+                listStyle: 'none',
+              }}>
                 {NAV_LINKS.map(({ href, label }) => (
                   <li key={href}>
-                    <Link
-                      href={href}
-                      style={{
-                        fontSize: '0.72rem',
-                        color: 'rgba(255,255,255,0.6)',
-                        textDecoration: 'none',
-                        letterSpacing: '0',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
+                    <Link href={href} style={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255,255,255,0.6)',
+                      textDecoration: 'none',
+                      letterSpacing: '0.04em',
+                      whiteSpace: 'nowrap',
+                      display: 'block',
+                      padding: '0.3rem 0',
+                    }}>
                       {label}
                     </Link>
                   </li>
@@ -137,12 +121,13 @@ export default function RootLayout({
               </ul>
             </nav>
           </div>
-        </header>
 
-        <div className="app-shell">
+          {/* Main content */}
           <main id="main-content" className="main-content">
             {children}
           </main>
+
+          {/* Right sidebar — search + filters */}
           <Sidebar />
         </div>
 
