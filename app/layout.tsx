@@ -96,7 +96,7 @@ export default function RootLayout({
               }}
               aria-label="OMEN — Home"
             >
-              <img src="/omen_logo.svg" alt="" width="24" height="24" style={{ display: 'block' }} />
+              <img src="/omen_logo.svg" alt="" width="32" height="32" style={{ display: 'block' }} />
               OMEN
             </Link>
             <nav aria-label="Primary navigation">
@@ -104,11 +104,11 @@ export default function RootLayout({
                 role="list"
                 style={{
                   display: 'flex',
-                  gap: '0.75rem',
+                  gap: '0.5rem',
                   margin: 0,
                   padding: 0,
                   listStyle: 'none',
-                  flexWrap: 'wrap',
+                  flexWrap: 'nowrap',
                 }}
               >
                 {NAV_LINKS.map(({ href, label }) => (
@@ -116,10 +116,11 @@ export default function RootLayout({
                     <Link
                       href={href}
                       style={{
-                        fontSize: '0.8rem',
+                        fontSize: '0.72rem',
                         color: 'rgba(255,255,255,0.6)',
                         textDecoration: 'none',
-                        letterSpacing: '0.04em',
+                        letterSpacing: '0',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {label}
