@@ -99,7 +99,7 @@ export default function RootLayout({
                 role="list"
                 style={{
                   display: 'flex',
-                  gap: '1.5rem',
+                  gap: '0.75rem',
                   margin: 0,
                   padding: 0,
                   listStyle: 'none',
@@ -110,7 +110,12 @@ export default function RootLayout({
                   <li key={href}>
                     <Link
                       href={href}
-                      className="nav-link"
+                      style={{
+                        fontSize: '0.8rem',
+                        color: 'rgba(255,255,255,0.6)',
+                        textDecoration: 'none',
+                        letterSpacing: '0.04em',
+                      }}
                     >
                       {label}
                     </Link>
