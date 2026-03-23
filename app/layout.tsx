@@ -69,6 +69,31 @@ export default function RootLayout({
           Skip to main content
         </a>
 
+        {/* Corner logo — outside header flow */}
+        <div style={{
+          position: 'fixed',
+          top: '1rem',
+          left: '1rem',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0rem',
+        }}>
+          <Link href="/" style={{ textDecoration: 'none' }} aria-label="OMEN — Home">
+            <img src="/omen_logo.svg" alt="" width="320" height="320" style={{ display: 'block' }} />
+            <span style={{
+              display: 'block',
+              textAlign: 'center',
+              fontWeight: 400,
+              fontSize: '1.8rem',
+              letterSpacing: '0.2em',
+              color: 'var(--omen-accent)',
+              marginTop: '-2rem',
+            }}>OMEN</span>
+          </Link>
+        </div>
+
         <header
           style={{
             borderBottom: '1px solid var(--omen-border)',
@@ -81,26 +106,6 @@ export default function RootLayout({
             className="container"
             style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}
           >
-            <Link
-              href="/"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.25rem',
-                textDecoration: 'none',
-                flexShrink: 0,
-              }}
-              aria-label="OMEN — Home"
-            >
-              <img src="/omen_logo.svg" alt="" width="52" height="52" style={{ display: 'block' }} />
-              <span style={{
-                fontWeight: 400,
-                fontSize: '0.8rem',
-                letterSpacing: '0.2em',
-                color: 'var(--omen-accent)',
-              }}>OMEN</span>
-            </Link>
             <nav aria-label="Primary navigation">
               <ul
                 role="list"
