@@ -176,7 +176,7 @@ export default async function LedgerPage() {
             TOTAL BLOCKS
           </p>
           <p style={{ margin: '0.2rem 0 0', fontSize: '1.5rem', fontWeight: 700, color: 'var(--omen-accent)' }}>
-            {usingSeed ? '—' : totalCount.toLocaleString()}
+            {usingSeed ? '[ — ]' : totalCount.toLocaleString()}
           </p>
         </div>
         {Object.entries(CATEGORY_META).map(([cat, meta]) => (
@@ -185,7 +185,7 @@ export default async function LedgerPage() {
               {meta.label}
             </p>
             <p style={{ margin: '0.2rem 0 0', fontSize: '1.5rem', fontWeight: 700, color: 'var(--omen-text)' }}>
-              {usingSeed ? '—' : (categoryCounts[cat] ?? 0)}
+              {usingSeed ? '[ — ]' : (categoryCounts[cat] ?? 0)}
             </p>
           </div>
         ))}
