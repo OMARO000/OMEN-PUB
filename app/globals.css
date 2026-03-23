@@ -130,6 +130,19 @@ a:hover {
   text-decoration: none;
 }
 
+.nav-link {
+  font-size: 0.8rem;
+  color: var(--omen-muted);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  transition: color 0.15s;
+}
+
+.nav-link:hover {
+  color: var(--omen-accent);
+  text-decoration: none;
+}
+
 /* ---------------------------------------------------------------------------
    ViolationTag Badges
    --------------------------------------------------------------------------- */

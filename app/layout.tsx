@@ -22,14 +22,14 @@ export const metadata: Metadata = {
 };
 
 const NAV_LINKS = [
-  { href: '/ledger', label: 'LEDGER >' },
-  { href: '/dashboard', label: 'DASHBOARD >' },
-  { href: '/contribute', label: 'CONTRIBUTE >' },
-  { href: '/dashboard/earnings', label: 'EARNINGS >' },
-  { href: '/oca', label: 'OCA >' },
-  { href: '/about', label: 'ABOUT >' },
-  { href: '/api', label: 'API >' },
-  { href: '/legal-battles', label: 'LEGAL >' },
+  { href: '/ledger', label: '[ ledger ]' },
+  { href: '/dashboard', label: '[ dashboard ]' },
+  { href: '/contribute', label: '[ contribute ]' },
+  { href: '/dashboard/earnings', label: '[ earnings ]' },
+  { href: '/oca', label: '[ oca ]' },
+  { href: '/about', label: '[ about ]' },
+  { href: '/api', label: '[ api ]' },
+  { href: '/legal-battles', label: '[ legal ]' },
 ];
 
 export default function RootLayout({
@@ -84,7 +84,7 @@ export default function RootLayout({
             <Link
               href="/"
               style={{
-                fontWeight: 700,
+                fontWeight: 400,
                 fontSize: '1.1rem',
                 letterSpacing: '0.15em',
                 textDecoration: 'none',
@@ -110,12 +110,7 @@ export default function RootLayout({
                   <li key={href}>
                     <Link
                       href={href}
-                      style={{
-                        fontSize: '0.8rem',
-                        opacity: 0.7,
-                        textDecoration: 'none',
-                        letterSpacing: '0.08em',
-                      }}
+                      className="nav-link"
                     >
                       {label}
                     </Link>
