@@ -13,7 +13,7 @@ export default function HomePage() {
           <p style={{ color: 'var(--omen-muted)', fontSize: '0.8rem', letterSpacing: '0.15em', marginBottom: '1rem' }}>
             OMARO PUBLIC BENEFIT CORPORATION
           </p>
-          <h1 style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontWeight: 400, marginBottom: '1.5rem', letterSpacing: '0.02em' }}>
+          <h1 style={{ fontSize: 'clamp(1rem, 2vw, 1.4rem)', fontWeight: 400, marginBottom: '1.5rem', letterSpacing: '0.02em' }}>
             The permanent record of corporate conduct.
           </h1>
           <p style={{ fontSize: '1.1rem', color: 'var(--omen-muted)', maxWidth: '600px', lineHeight: 1.7 }}>
