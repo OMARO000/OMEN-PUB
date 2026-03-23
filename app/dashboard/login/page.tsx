@@ -121,9 +121,9 @@ export default function LoginPage() {
           style={{
             width: '100%',
             padding: '0.65rem',
-            background: 'transparent',
+            background: 'var(--omen-accent)',
             border: '1px solid var(--omen-accent)',
-            color: 'var(--omen-accent)',
+            color: '#000',
             fontFamily: 'inherit',
             fontSize: '0.8rem',
             letterSpacing: '0.15em',
