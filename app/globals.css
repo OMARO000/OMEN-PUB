@@ -400,8 +400,6 @@ a:hover {
   flex: 1;
   overflow-y: auto;
   min-width: 0;
-  display: flex;
-  justify-content: center;
 }
 
 /* ---------------------------------------------------------------------------
@@ -410,7 +408,7 @@ a:hover {
 
 .container {
   width: 100%;
-  max-width: 760px;
+  max-width: 640px;
   margin: 0 auto;
   padding: 0 2rem;
 }
