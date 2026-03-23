@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { users, contributionPayments } from '@/db/schema';
 import type { PayoutMethod } from '@/db/schema';
 
-export const MINIMUM_PAYOUT = 10;
+import { MINIMUM_PAYOUT } from '@/lib/contributions/constants';
 
 export class PayoutError extends Error {
   constructor(
