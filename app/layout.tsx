@@ -79,7 +79,7 @@ export default function RootLayout({
         >
           <div
             className="container"
-            style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'nowrap', overflow: 'hidden' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'nowrap' }}
           >
             <Link
               href="/"
