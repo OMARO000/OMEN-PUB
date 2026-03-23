@@ -49,7 +49,7 @@ export default function LoginPage() {
         OMARO PBC / OMEN
       </p>
       <h1 style={{ fontSize: '1.4rem', letterSpacing: '0.05em', marginBottom: '2rem' }}>
-        LOGIN
+        [ login ]
       </h1>
 
       <hr className="divider" style={{ marginBottom: '2rem' }} />
@@ -132,7 +132,7 @@ export default function LoginPage() {
             marginBottom: '1.5rem',
           }}
         >
-          {loading ? 'VERIFYING...' : 'LOGIN'}
+          {loading ? '[ verifying... ]' : '[ login ]'}
         </button>
       </form>
 
