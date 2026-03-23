@@ -13,7 +13,7 @@ export default function HomePage() {
           <p style={{ color: 'var(--omen-muted)', fontSize: '0.8rem', letterSpacing: '0.15em', marginBottom: '1rem' }}>
             OMARO PUBLIC BENEFIT CORPORATION
           </p>
-          <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', marginBottom: '1.5rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontWeight: 400, marginBottom: '1.5rem', letterSpacing: '0.02em' }}>
             The permanent record of corporate conduct.
           </h1>
           <p style={{ fontSize: '1.1rem', color: 'var(--omen-muted)', maxWidth: '600px', lineHeight: 1.7 }}>
@@ -42,15 +42,15 @@ export default function HomePage() {
           </h2>
           <nav aria-label="Quick links" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <Link href="/ledger" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', background: 'var(--omen-surface)', textDecoration: 'none', letterSpacing: '0.05em', color: 'var(--omen-text)' }}>
-              <span>VIEW LEDGER &gt;</span>
+              <span>[ view ledger ]</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>All records</span>
             </Link>
             <Link href="/legal-battles" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', background: 'var(--omen-surface)', textDecoration: 'none', letterSpacing: '0.05em', color: 'var(--omen-text)' }}>
-              <span>LEGAL BATTLES &gt;</span>
+              <span>[ legal battles ]</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Attacks on OMEN</span>
             </Link>
             <Link href="/about" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '480px', padding: '0.75rem 1rem', border: '1px solid var(--omen-border)', background: 'var(--omen-surface)', textDecoration: 'none', letterSpacing: '0.05em', color: 'var(--omen-text)' }}>
-              <span>ABOUT &gt;</span>
+              <span>[ about ]</span>
               <span style={{ color: 'var(--omen-muted)', fontSize: '0.875rem' }}>Who we are</span>
             </Link>
           </nav>
