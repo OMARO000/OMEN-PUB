@@ -127,10 +127,10 @@ export default function RootLayout({
         </header>
 
         <div className="app-shell">
-          <Sidebar />
           <main id="main-content" className="main-content">
             {children}
           </main>
+          <Sidebar />
         </div>
 
         <footer
