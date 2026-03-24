@@ -67,7 +67,7 @@ export default function APIDocsPage() {
             <tbody>
               {PLANNED_ENDPOINTS.map(({ method, path, description }) => (
                 <tr
-                  key={path}
+                  key={`${method}-${path}`}
                   style={{ borderBottom: '1px solid var(--omen-border)' }}
                 >
                   <td style={{ padding: '0.75rem 1rem 0.75rem 0', color: 'var(--omen-muted)', whiteSpace: 'nowrap' }}>
