@@ -106,13 +106,16 @@ export default function RootLayout({
                 {NAV_LINKS.map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} style={{
-                      fontSize: '0.85rem',
-                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: '0.75rem',
+                      color: 'var(--omen-accent)',
                       textDecoration: 'none',
                       letterSpacing: '0.04em',
                       whiteSpace: 'nowrap',
                       display: 'block',
-                      padding: '0.3rem 0',
+                      padding: '0.25rem 0.5rem',
+                      border: '1px solid var(--omen-accent)',
+                      marginBottom: '0.3rem',
+                      textAlign: 'center',
                     }}>
                       {label}
                     </Link>
@@ -139,11 +142,10 @@ export default function RootLayout({
             color: 'var(--omen-muted)',
             background: 'var(--omen-sidebar)',
             flexShrink: 0,
+            textAlign: 'center',
           }}
         >
-          <div className="container">
-            <p style={{ margin: 0 }}>OMARO Public Benefit Corporation. The record stands.</p>
-          </div>
+          <p style={{ margin: 0 }}>OMARO Public Benefit Corporation. The record stands.</p>
         </footer>
 
         <InstallPrompt />
