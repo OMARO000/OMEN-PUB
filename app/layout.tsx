@@ -93,6 +93,23 @@ export default function RootLayout({
                 marginTop: '-2rem',
               }}>OMEN</span>
             </Link>
+            <a
+              href="https://omaro.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                textAlign: 'center',
+                fontSize: '0.6rem',
+                letterSpacing: '0.18em',
+                color: 'var(--omen-accent)',
+                marginTop: '0.4rem',
+                padding: '0.25rem 0.5rem',
+                border: '1px solid var(--omen-accent)',
+                background: 'rgba(76,175,125,0.06)',
+                textDecoration: 'none',
+              }}
+            >AN OMARO COMPANY</a>
 
             <nav aria-label="Primary navigation" style={{ marginTop: '2rem' }}>
               <ul role="list" style={{
@@ -106,13 +123,13 @@ export default function RootLayout({
                 {NAV_LINKS.map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} style={{
-                      fontSize: '0.75rem',
+                      fontSize: '0.9rem',
                       color: 'var(--omen-accent)',
                       textDecoration: 'none',
                       letterSpacing: '0.04em',
                       whiteSpace: 'nowrap',
                       display: 'block',
-                      padding: '0.25rem 0.5rem',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid var(--omen-accent)',
                       marginBottom: '0.3rem',
                       textAlign: 'center',
