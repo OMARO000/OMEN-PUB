@@ -135,21 +135,16 @@ export default function FinancialsPage() {
       let entityName: string | null = null
       let firstHitSource: Record<string, unknown> | null = null
 
-      if (searchData.source === 'fulltext' && searchData.hits?.length > 0) {
-        firstHitSource = searchData.hits[0]._source
-        console.log('[financials] fulltext first hit _source:', JSON.stringify(firstHitSource, null, 2))
-        // CIK is in ciks array (index 0), fall back to entity_id or file_num
-        const cikSource =
-          (firstHitSource?.ciks as string[])?.[0] ??
-          firstHitSource?.entity_id ??
-          firstHitSource?.file_num ??
-          ''
-        const rawCik = String(cikSource).replace(/[^0-9]/g, '')
+      if (searchData.source === 'fulltext' && searchData.bestMatch) {
+        const best = searchData.bestMatch as { name: string; cik: string; score: number }
+        console.log('[financials] fulltext best match:', best.name, 'score:', best.score, 'cik:', best.cik)
+        firstHitSource = searchData.hits?.[0]?._source ?? null
+        const rawCik = String(best.cik).replace(/[^0-9]/g, '')
         console.log('[financials] raw CIK extracted:', rawCik)
         if (rawCik) {
           paddedCik = rawCik.padStart(10, '0')
           console.log('[financials] formatted CIK:', paddedCik)
-          entityName = (firstHitSource?.display_names as {name:string}[])?.[0]?.name ?? null
+          entityName = best.name
         }
       } else if (searchData.source === 'tickers' && searchData.matches?.length > 0) {
         const match = searchData.matches[0]
