@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 
 const NAV_LINKS = [
   { href: '/ledger', label: '[ ledger ]' },
+  { href: '/financials', label: '[ financials ]' },
   { href: '/dashboard', label: '[ dashboard ]' },
   { href: '/contribute', label: '[ contribute ]' },
-  { href: '/dashboard/earnings', label: '[ earnings ]' },
   { href: '/oca', label: '[ oca ]' },
   { href: '/about', label: '[ about ]' },
   { href: '/api', label: '[ api ]' },
