@@ -26,6 +26,14 @@ interface OmenViolations {
   fineSum: number
 }
 
+interface ProxyResult {
+  ratio: number | null
+  method: 'regex_ratio' | 'regex_times' | 'calculated' | 'claude' | 'not_found'
+  filingUrl: string
+  filingDate: string
+  rawText: string
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
@@ -88,6 +96,8 @@ export default function FinancialsPage() {
   const [loadingMsg, setLoadingMsg] = useState('')
   const [facts, setFacts] = useState<CompanyFacts | null>(null)
   const [violations, setViolations] = useState<OmenViolations | null>(null)
+  const [proxyResult, setProxyResult] = useState<ProxyResult | null>(null)
+  const [proxyLoading, setProxyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<{ name: string; cik: string; ticker: string; score: number }[]>([])
   const [showAllCandidates, setShowAllCandidates] = useState(false)
@@ -173,6 +183,8 @@ export default function FinancialsPage() {
   async function generateReport(cik: string, entityName: string) {
     setState('loading')
     setError(null)
+    setProxyResult(null)
+    setProxyLoading(true)
     msgIdx.current = 0
     setLoadingMsg(loadingMsgs[0])
     msgTimer.current = setInterval(() => {
@@ -224,10 +236,18 @@ export default function FinancialsPage() {
         industry: null,
       }
 
+      // Fire violations + proxy fetches in parallel (non-blocking)
       try {
         const vRes = await fetch(`/api/violations-summary?name=${encodeURIComponent(parsed.name)}`)
         if (vRes.ok) setViolations(await vRes.json())
       } catch { /* violations optional */ }
+
+      // Proxy (CEO pay) loads in background — does not block report render
+      fetch(`/api/edgar/proxy?cik=${cik}`)
+        .then((r) => r.json())
+        .then((data: ProxyResult) => { setProxyResult(data) })
+        .catch(() => { setProxyResult({ ratio: null, method: 'not_found', filingUrl: '', filingDate: '', rawText: '' }) })
+        .finally(() => setProxyLoading(false))
 
       if (msgTimer.current) clearInterval(msgTimer.current)
       setFacts(parsed)
@@ -272,9 +292,6 @@ export default function FinancialsPage() {
   const customerPct = revenuePerCustomer && monthly > 0
     ? ((monthly * 12) / revenuePerCustomer) * 100
     : null
-
-  // CEO pay ratio: placeholder — DEF 14A not in XBRL; show note
-  const ceoPay = null // sourced from proxy statement, not available via XBRL
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -585,12 +602,39 @@ export default function FinancialsPage() {
 
       {/* CEO pay ratio */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <span style={{ ...S.metricValue }}>
-          {ceoPay != null ? `$${ceoPay}` : 'not disclosed'}
-        </span>
-        <p style={{ ...S.metricLabel, marginTop: '0.25rem' }}>CEO Pay Ratio</p>
-        <p style={{ ...S.muted, fontSize: '0.7rem', marginTop: '0.25rem' }}>
-          What the person at the top makes compared to everyone else. Sourced from proxy statement (DEF 14A) — not available via XBRL.
+        <p style={{ ...S.metricLabel, marginBottom: '0.4rem' }}>CEO Pay Ratio</p>
+        {proxyLoading ? (
+          <span style={{ ...S.muted, fontSize: '0.85rem' }}>loading...</span>
+        ) : proxyResult?.ratio != null ? (
+          <>
+            <span style={{ ...S.metricValue }}>
+              {`$${proxyResult.ratio.toLocaleString()}`}
+            </span>
+            <p style={{ ...S.muted, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+              For every $1 the median employee earns, the CEO earns ${proxyResult.ratio.toLocaleString()}
+            </p>
+            <p style={{ ...S.muted, fontSize: '0.65rem', marginTop: '0.25rem' }}>
+              Source:{' '}
+              {proxyResult.filingUrl ? (
+                <a href={proxyResult.filingUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--omen-muted)', textDecoration: 'underline' }}>
+                  {proxyResult.filingDate} proxy statement
+                </a>
+              ) : `${proxyResult.filingDate} proxy statement`}
+              {proxyResult.method === 'claude' && <span style={{ marginLeft: '0.5rem', color: 'var(--omen-muted)', fontSize: '0.6rem' }}>[AI-extracted]</span>}
+            </p>
+          </>
+        ) : (
+          <>
+            <p style={{ ...S.muted, fontSize: '0.8rem' }}>CEO pay ratio not available in this filing</p>
+            {proxyResult?.filingUrl && (
+              <a href={proxyResult.filingUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--omen-accent)', textDecoration: 'none', fontSize: '0.75rem' }}>
+                [ view proxy filing ↗ ]
+              </a>
+            )}
+          </>
+        )}
+        <p style={{ ...S.muted, fontSize: '0.65rem', marginTop: '0.4rem' }}>
+          What the person at the top makes compared to everyone else
         </p>
       </div>
 
