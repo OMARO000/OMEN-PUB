@@ -84,16 +84,21 @@ function recentQuarters(
 
 export default function FinancialsPage() {
   const [query, setQuery] = useState('')
-  const [state, setState] = useState<'search' | 'loading' | 'report' | 'notfound'>('search')
+  const [state, setState] = useState<'search' | 'confirm' | 'loading' | 'report' | 'notfound'>('search')
   const [loadingMsg, setLoadingMsg] = useState('')
   const [facts, setFacts] = useState<CompanyFacts | null>(null)
   const [violations, setViolations] = useState<OmenViolations | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [candidates, setCandidates] = useState<{ name: string; cik: string; ticker: string; score: number }[]>([])
+  const [showAllCandidates, setShowAllCandidates] = useState(false)
 
   // Personal calculator state
   const [monthlySpend, setMonthlySpend] = useState('')
   const [yearsCustomer, setYearsCustomer] = useState('')
   const [peerQuery, setPeerQuery] = useState('')
+  const [peerResult, setPeerResult] = useState<{ name: string; revenue: number | null } | null>(null)
+  const [peerLoading, setPeerLoading] = useState(false)
+  const [peerError, setPeerError] = useState<string | null>(null)
 
   const loadingMsgs = [
     '> searching SEC EDGAR...',
@@ -113,10 +118,61 @@ export default function FinancialsPage() {
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim()) return
-    setState('loading')
     setError(null)
     setFacts(null)
     setViolations(null)
+    setCandidates([])
+    setShowAllCandidates(false)
+    setState('loading')
+    setLoadingMsg('> searching SEC EDGAR...')
+
+    try {
+      const searchRes = await fetch(`/api/edgar/search?company=${encodeURIComponent(query.trim())}`)
+      const searchData = await searchRes.json()
+
+      type Candidate = { name: string; cik: string; ticker: string; score: number }
+      const found: Candidate[] = []
+
+      console.log('[financials] search response source:', searchData.source)
+      if (searchData.matches?.length > 0) {
+        console.log('[financials] first raw match:', JSON.stringify(searchData.matches[0]))
+      }
+
+      if (searchData.source === 'fulltext' && searchData.matches?.length > 0) {
+        for (const m of searchData.matches) {
+          const name = m.name ?? m.title ?? m.display_name ?? 'Unknown Company'
+          const rawCik = String(m.cik ?? m.cik_str ?? '').replace(/[^0-9]/g, '')
+          if (!rawCik) continue
+          found.push({ name, cik: rawCik.padStart(10, '0'), ticker: m.ticker ?? '', score: m.score ?? 0 })
+        }
+      } else if (searchData.source === 'tickers' && searchData.matches?.length > 0) {
+        for (const m of searchData.matches) {
+          const name = m.title ?? m.name ?? 'Unknown Company'
+          const rawCik = String(m.cik_str ?? m.cik ?? '').replace(/[^0-9]/g, '')
+          if (!rawCik) continue
+          found.push({ name, cik: rawCik.padStart(10, '0'), ticker: m.ticker ?? '', score: m.score ?? 0 })
+        }
+      }
+
+      console.log('[financials] candidates built:', found.slice(0, 3).map(c => `${c.name} (${c.cik})`))
+
+
+      if (found.length === 0) {
+        setState('notfound')
+        return
+      }
+
+      setCandidates(found)
+      setState('confirm')
+    } catch {
+      setError('Failed to reach SEC EDGAR. Try again.')
+      setState('search')
+    }
+  }
+
+  async function generateReport(cik: string, entityName: string) {
+    setState('loading')
+    setError(null)
     msgIdx.current = 0
     setLoadingMsg(loadingMsgs[0])
     msgTimer.current = setInterval(() => {
@@ -125,59 +181,7 @@ export default function FinancialsPage() {
     }, 1800)
 
     try {
-      // Step 1 — find company CIK via local EDGAR proxy
-      const searchRes = await fetch(
-        `/api/edgar/search?company=${encodeURIComponent(query.trim())}`,
-      )
-      const searchData = await searchRes.json()
-
-      let paddedCik: string | null = null
-      let entityName: string | null = null
-      let firstHitSource: Record<string, unknown> | null = null
-
-      if (searchData.source === 'fulltext' && searchData.bestMatch) {
-        const best = searchData.bestMatch as { name: string; cik: string; score: number }
-        console.log('[financials] fulltext best match:', best.name, 'score:', best.score, 'cik:', best.cik)
-        firstHitSource = searchData.hits?.[0]?._source ?? null
-        const rawCik = String(best.cik).replace(/[^0-9]/g, '')
-        console.log('[financials] raw CIK extracted:', rawCik)
-        if (rawCik) {
-          paddedCik = rawCik.padStart(10, '0')
-          console.log('[financials] formatted CIK:', paddedCik)
-          entityName = best.name
-        }
-      } else if (searchData.source === 'tickers' && searchData.matches?.length > 0) {
-        const match = searchData.matches[0]
-        console.log('[financials] ticker match:', JSON.stringify(match))
-        const rawCik = String(match.cik_str).replace(/[^0-9]/g, '')
-        console.log('[financials] raw CIK from ticker:', rawCik)
-        paddedCik = rawCik.padStart(10, '0')
-        console.log('[financials] formatted CIK:', paddedCik)
-        entityName = match.title
-      } else {
-        console.log('[financials] search returned:', searchData.source, '— no matches')
-      }
-
-      if (!paddedCik) {
-        if (msgTimer.current) clearInterval(msgTimer.current)
-        setState('notfound')
-        return
-      }
-
-      // Confidence check — reject clearly wrong matches
-      if (entityName) {
-        const score = wordOverlap(query.trim(), entityName)
-        console.log('[financials] match confidence:', score, 'for', entityName)
-        if (score < 0.4) {
-          if (msgTimer.current) clearInterval(msgTimer.current)
-          setError(`No exact match found for "${query.trim()}". Try the official company name — e.g. "Exxon Mobil Corp", "Apple Inc", "Amazon Com Inc".`)
-          setState('search')
-          return
-        }
-      }
-
-      // Step 2 — fetch company facts via local EDGAR proxy
-      const factsRes = await fetch(`/api/edgar/facts?cik=${paddedCik}`)
+      const factsRes = await fetch(`/api/edgar/facts?cik=${cik}`)
       if (!factsRes.ok) {
         if (msgTimer.current) clearInterval(msgTimer.current)
         setState('notfound')
@@ -199,16 +203,14 @@ export default function FinancialsPage() {
       const buybacks = buyEntry?.value ?? null
       const taxExpense = taxEntry?.value ?? null
       const preTaxIncome = preTaxEntry?.value ?? null
-      const effectiveTaxRate = taxExpense && preTaxIncome && preTaxIncome !== 0
-        ? taxExpense / preTaxIncome
-        : null
+      const effectiveTaxRate = taxExpense && preTaxIncome && preTaxIncome !== 0 ? taxExpense / preTaxIncome : null
       const profitMargin = rev && ni && rev !== 0 ? ni / rev : null
       const quarters = recentQuarters(usgaap, 'Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax', 'SalesRevenueNet')
 
       const parsed: CompanyFacts = {
-        cik: paddedCik,
-        name: factsJson.entityName ?? entityName ?? query.trim().toUpperCase(),
-        ticker: (firstHitSource?.period_of_report as string) ?? '',
+        cik,
+        name: factsJson.entityName ?? entityName,
+        ticker: '',
         revenue: rev,
         revenueHistory: quarters,
         netIncome: ni,
@@ -222,24 +224,40 @@ export default function FinancialsPage() {
         industry: null,
       }
 
-      // Step 3 — query OMEN ledger for violations
       try {
         const vRes = await fetch(`/api/violations-summary?name=${encodeURIComponent(parsed.name)}`)
-        if (vRes.ok) {
-          const vData = await vRes.json()
-          setViolations(vData)
-        }
-      } catch {
-        // violations optional — no-op
-      }
+        if (vRes.ok) setViolations(await vRes.json())
+      } catch { /* violations optional */ }
 
       if (msgTimer.current) clearInterval(msgTimer.current)
       setFacts(parsed)
       setState('report')
     } catch {
       if (msgTimer.current) clearInterval(msgTimer.current)
-      setError('Failed to fetch data from SEC EDGAR. Try again.')
-      setState('search')
+      setError('Failed to fetch financial data. Try again.')
+      setState('confirm')
+    }
+  }
+
+  async function loadPeer(q: string) {
+    if (!q.trim()) return
+    setPeerLoading(true); setPeerError(null); setPeerResult(null)
+    try {
+      const searchRes = await fetch(`/api/edgar/search?company=${encodeURIComponent(q.trim())}`)
+      const searchData = await searchRes.json()
+      const top = searchData.matches?.[0]
+      if (!top) { setPeerError('No match found.'); setPeerLoading(false); return }
+      const cik = String(top.cik ?? top.cik_str ?? '').replace(/[^0-9]/g, '').padStart(10, '0')
+      const factsRes = await fetch(`/api/edgar/facts?cik=${cik}`)
+      if (!factsRes.ok) { setPeerError('Could not fetch financials.'); setPeerLoading(false); return }
+      const factsJson = await factsRes.json()
+      const usgaap = factsJson.facts?.['us-gaap'] ?? {}
+      const revEntry = latestAnnual(usgaap, 'Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax', 'SalesRevenueNet')
+      setPeerResult({ name: factsJson.entityName ?? top.name, revenue: revEntry?.value ?? null })
+    } catch {
+      setPeerError('Failed to load peer data.')
+    } finally {
+      setPeerLoading(false)
     }
   }
 
@@ -360,6 +378,61 @@ export default function FinancialsPage() {
         </form>
 
         <p style={S.muted}>Data sourced from SEC EDGAR. Public companies only.</p>
+        {error && <p style={{ ...S.muted, color: 'var(--tag-ugly)', marginTop: '0.75rem' }}>{error}</p>}
+      </div>
+    )
+  }
+
+  // ── Confirm state ────────────────────────────────────────────────────────────
+
+  if (state === 'confirm') {
+    console.log('[financials] confirm render, candidates[0]:', candidates[0] ? JSON.stringify(candidates[0]) : 'none')
+    const visible = showAllCandidates ? candidates : candidates.slice(0, 3)
+    return (
+      <div style={S.page}>
+        <p style={S.sectionLabel}>OMEN / FINANCIAL FOOTPRINT</p>
+        <h1 style={{ ...S.heading, fontSize: '1.4rem', marginBottom: '0.25rem' }}>[ SELECT COMPANY ]</h1>
+        <p style={{ ...S.muted, marginBottom: '1.5rem' }}>
+          We found the following matches. Select the correct company to generate their report.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '1rem' }}>
+          {visible.map((c, i) => (
+            <div key={`${c.cik}-${i}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--omen-border)', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 }}>
+                <span style={{ color: 'var(--omen-text)', fontSize: '0.9rem', letterSpacing: '0.02em' }}>
+                  {c.name}
+                  {c.ticker && <span style={{ ...S.muted, marginLeft: '0.5rem', fontSize: '0.75rem' }}>[{c.ticker}]</span>}
+                </span>
+                <span style={{ ...S.muted, fontSize: '0.7rem' }}>CIK: {c.cik}</span>
+              </div>
+              <button
+                onClick={() => generateReport(c.cik, c.name)}
+                style={S.btn}
+              >[ select ]</button>
+            </div>
+          ))}
+        </div>
+
+        {!showAllCandidates && candidates.length > 3 && (
+          <button
+            onClick={() => setShowAllCandidates(true)}
+            style={{ ...S.btn, marginBottom: '1rem', borderColor: 'var(--omen-border)', color: 'var(--omen-muted)' }}
+          >[ show more results ]</button>
+        )}
+
+        <div style={{ marginTop: '0.5rem' }}>
+          <button
+            onClick={() => setState('search')}
+            style={{ ...S.muted, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+          >[ back to search ]</button>
+        </div>
+
+        <p style={{ ...S.muted, fontSize: '0.65rem', marginTop: '1.5rem' }}>
+          Not seeing the right company? Try the official name used in SEC filings.{' '}
+          <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--omen-muted)', textDecoration: 'underline' }}>Search EDGAR directly</a>
+        </p>
+
         {error && <p style={{ ...S.muted, color: 'var(--tag-ugly)', marginTop: '0.75rem' }}>{error}</p>}
       </div>
     )
@@ -554,16 +627,22 @@ export default function FinancialsPage() {
             placeholder="0"
           />
         </label>
-        <label style={S.muted}>
-          Compare to another company:
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={S.muted}>Compare to another company:</span>
           <input
             type="text"
             value={peerQuery}
-            onChange={(e) => setPeerQuery(e.target.value)}
-            style={{ background: 'transparent', border: '1px solid var(--omen-border)', color: 'var(--omen-muted)', fontFamily: 'inherit', fontSize: '0.9rem', padding: '0.3rem 0.5rem', outline: 'none', width: '200px', display: 'inline-block', marginLeft: '0.5rem' }}
+            onChange={(e) => { setPeerQuery(e.target.value); setPeerResult(null); setPeerError(null) }}
+            onKeyDown={(e) => e.key === 'Enter' && loadPeer(peerQuery)}
+            style={{ background: 'transparent', border: '1px solid var(--omen-border)', color: 'var(--omen-muted)', fontFamily: 'inherit', fontSize: '0.9rem', padding: '0.3rem 0.5rem', outline: 'none', width: '200px' }}
             placeholder="e.g. Microsoft"
           />
-        </label>
+          <button
+            onClick={() => loadPeer(peerQuery)}
+            disabled={peerLoading}
+            style={{ ...S.btn, opacity: peerLoading ? 0.5 : 1 }}
+          >{peerLoading ? '[ loading... ]' : '[ compare ]'}</button>
+        </div>
       </div>
 
       {monthly > 0 && (
@@ -580,6 +659,37 @@ export default function FinancialsPage() {
             </p>
           )}
           <p style={{ ...S.muted, fontSize: '0.65rem' }}>CEO pay ratio data not available — cannot calculate salary comparison</p>
+        </div>
+      )}
+
+      {peerError && <p style={{ ...S.muted, color: 'var(--tag-ugly)', marginBottom: '1rem' }}>{peerError}</p>}
+
+      {peerResult && (
+        <div style={{ border: '1px solid var(--omen-border)', padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <p style={S.muted}>
+            <span style={{ color: 'var(--omen-text)' }}>{facts!.name}</span> annual revenue:{' '}
+            <span style={{ color: 'var(--omen-text)' }}>{facts!.revenue != null ? fmt(facts!.revenue) : '—'}</span>
+          </p>
+          <p style={S.muted}>
+            <span style={{ color: 'var(--omen-text)' }}>{peerResult.name}</span> annual revenue:{' '}
+            <span style={{ color: 'var(--omen-text)' }}>{peerResult.revenue != null ? fmt(peerResult.revenue) : '—'}</span>
+          </p>
+          {facts!.revenue != null && peerResult.revenue != null && (
+            <p style={{ ...S.muted, fontSize: '0.75rem' }}>
+              {facts!.name} made{' '}
+              {facts!.revenue > peerResult.revenue
+                ? <><span style={S.green}>{fmt(facts!.revenue - peerResult.revenue)} more</span> than {peerResult.name}</>
+                : <><span style={S.red}>{fmt(peerResult.revenue - facts!.revenue)} less</span> than {peerResult.name}</>
+              } last fiscal year.
+            </p>
+          )}
+          {monthly > 0 && peerResult.revenue != null && facts!.revenue != null && (
+            <p style={{ ...S.muted, fontSize: '0.75rem' }}>
+              Spending ${monthly}/month with {peerResult.name} instead would fund a company that made{' '}
+              <span style={{ color: 'var(--omen-text)' }}>{fmt(Math.abs(facts!.revenue - peerResult.revenue))}</span>{' '}
+              {facts!.revenue > peerResult.revenue ? 'less' : 'more'} in annual revenue last year.
+            </p>
+          )}
         </div>
       )}
 
