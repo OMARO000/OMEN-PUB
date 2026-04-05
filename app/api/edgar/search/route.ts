@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import https from 'https'
-
-// Note: httpsAgent disables SSL verification for local dev only.
-// On Vercel (production) Node's native fetch is used and this agent is not applied.
-const httpsAgent = new https.Agent({ rejectUnauthorized: false })
-
-const EDGAR_HEADERS = {
-  'User-Agent': 'OMARO hello@omaro-pbc.org',
-  'Accept': 'application/json',
-}
+import { edgarFetch } from '../lib/edgarFetch'
 
 // Returns fraction of query words found in candidate title (case-insensitive)
 function wordOverlap(query: string, candidate: string): number {
   const qWords = query.toLowerCase().split(/\W+/).filter(Boolean)
   const cWords = candidate.toLowerCase().split(/\W+/).filter(Boolean)
   if (qWords.length === 0) return 0
-  const matched = qWords.filter((w) => cWords.includes(w))
-  return matched.length / qWords.length
+  return qWords.filter((w) => cWords.includes(w)).length / qWords.length
 }
 
 // Extract clean name and ticker from EDGAR display_names string
@@ -38,16 +28,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Primary: EDGAR company tickers JSON — most reliable, fully case-insensitive
-  const tickersUrl = 'https://www.sec.gov/files/company_tickers.json'
   console.log('[edgar/search] fetching tickers JSON')
 
   try {
-    const tickersRes = await fetch(tickersUrl, {
-      headers: EDGAR_HEADERS,
-      // @ts-ignore
-      agent: httpsAgent,
-      next: { revalidate: 86400 },
-    })
+    const tickersRes = await edgarFetch('https://www.sec.gov/files/company_tickers.json')
     console.log('[edgar/search] tickers status:', tickersRes.status)
 
     if (tickersRes.ok) {
@@ -63,7 +47,6 @@ export async function GET(req: NextRequest) {
         scored.slice(0, 5).map((c) => `${c.title} [${c.ticker}] (${c.score.toFixed(2)})`))
 
       if (scored.length > 0) {
-        // Deduplicate by CIK — keep highest-scored entry per CIK
         const seen = new Set<string>()
         const deduped = scored.filter((c) => {
           const cik = String(c.cik_str).padStart(10, '0')
@@ -92,11 +75,7 @@ export async function GET(req: NextRequest) {
   console.log('[edgar/search] falling back to fulltext:', ftUrl)
 
   try {
-    const ftRes = await fetch(ftUrl, {
-      headers: EDGAR_HEADERS,
-      // @ts-ignore
-      agent: httpsAgent,
-    })
+    const ftRes = await edgarFetch(ftUrl)
     console.log('[edgar/search] fulltext status:', ftRes.status)
 
     if (ftRes.ok) {
@@ -121,7 +100,6 @@ export async function GET(req: NextRequest) {
         const scored = (hits as Hit[])
           .map((hit) => {
             const src = hit._source
-            // display_names[0] is a string like "Apple Inc  (AAPL)  (CIK 0000320193)"
             const rawDisplayName = src.display_names?.[0] ?? src.entity_name ?? ''
             const { name, ticker } = parseDisplayName(rawDisplayName)
             const score = wordOverlap(company.trim(), name)
@@ -135,7 +113,6 @@ export async function GET(req: NextRequest) {
           scored.slice(0, 3).map((h) => `${h.name} [${h.ticker}] (${h.score.toFixed(2)})`))
 
         if (scored.length > 0) {
-          // Deduplicate by CIK
           const seen = new Set<string>()
           const deduped = scored.filter((h) => {
             const cik = String(h.cik).replace(/[^0-9]/g, '').padStart(10, '0')
