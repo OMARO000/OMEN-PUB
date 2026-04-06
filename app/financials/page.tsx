@@ -298,7 +298,8 @@ export default function FinancialsPage() {
   const S = {
     page: {
       padding: '2rem',
-      maxWidth: '760px',
+      maxWidth: '900px',
+      margin: '0 auto',
       fontFamily: 'var(--font-ibm-plex-mono), ui-monospace, monospace',
     } as React.CSSProperties,
     heading: {
