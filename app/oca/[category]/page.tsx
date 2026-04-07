@@ -11,12 +11,13 @@ function slugToCategory(slug: string): OcaCategory | null {
   return match ?? null;
 }
 
-export default function OcaCategoryPage({
+export default async function OcaCategoryPage({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }) {
-  const category = slugToCategory(params.category);
+  const { category: slug } = await params;
+  const category = slugToCategory(slug);
   if (!category) notFound();
   return <OcaBrowse initialCategory={category} />;
 }

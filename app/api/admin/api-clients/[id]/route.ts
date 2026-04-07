@@ -15,13 +15,14 @@ function isAdminAuthed(request: NextRequest): boolean {
 // PATCH — update tier or suspend/reinstate client
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   if (!isAdminAuthed(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = parseInt(params.id, 10);
+  const { id: idParam } = await params;
+  const id = parseInt(idParam, 10);
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }

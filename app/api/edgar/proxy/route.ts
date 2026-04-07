@@ -78,11 +78,7 @@ function extractCalculated(text: string): number | null {
 async function extractViaClaude(excerpt: string): Promise<number | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null
   try {
-    const client = new Anthropic({
-      ...(process.env.NODE_ENV !== 'production' && {
-        httpAgent: new https.Agent({ rejectUnauthorized: false })
-      })
-    })
+    const client = new Anthropic()
     const msg = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 100,

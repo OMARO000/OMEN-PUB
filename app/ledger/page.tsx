@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { stagedBlocks, companies } from '@/db/schema';
 
@@ -113,13 +113,16 @@ export default async function LedgerPage() {
         companyTicker: companies.ticker,
       })
       .from(stagedBlocks)
-      .leftJoin(companies, (t) => t.eq(stagedBlocks.companyId, companies.id))
+      .leftJoin(companies, eq(stagedBlocks.companyId, companies.id))
       .orderBy(desc(stagedBlocks.createdAt))
       .limit(50);
 
     if (rows.length > 0) {
       liveBlocks = rows.map(r => ({
         ...r,
+        primarySourceUrl: r.primarySourceUrl ?? '',
+        violationDate: r.violationDate ?? '',
+        researchedAt: r.researchedAt ?? '',
         company: { name: r.companyName ?? '', slug: r.companySlug ?? '', ticker: r.companyTicker ?? '' },
       }));
       totalCount = rows.length;

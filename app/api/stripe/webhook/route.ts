@@ -3,15 +3,12 @@ import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users } from '@/db/schema';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-});
-
 // Next.js App Router: disable body parsing so we get the raw buffer
-export const config = { api: { bodyParser: false } };
-
+export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2026-02-25.clover',
+  });
   const sig = request.headers.get('stripe-signature');
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

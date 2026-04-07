@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, inArray, like } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { companies, violations, VIOLATION_CATEGORIES } from '@/db/schema';
+import { companies, blocks, VIOLATION_CATEGORIES } from '@/db/schema';
 import type { ViolationCategory } from '@/db/schema';
 
 export async function GET(request: NextRequest) {
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
     // in the requested category
     if (category && (VIOLATION_CATEGORIES as readonly string[]).includes(category)) {
       const matching = db
-        .selectDistinct({ companyId: violations.companyId })
-        .from(violations)
-        .where(eq(violations.category, category as ViolationCategory))
+        .selectDistinct({ companyId: blocks.companyId })
+        .from(blocks)
+        .where(eq(blocks.category, category as ViolationCategory))
         .all();
 
       const ids = matching.map((v) => v.companyId);

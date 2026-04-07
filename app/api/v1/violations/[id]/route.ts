@@ -9,7 +9,7 @@ import { addWatermark } from '@/lib/api/watermark';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
   let apiKey = '';
@@ -20,18 +20,18 @@ export async function GET(
 
     const { allowed, remaining } = checkRateLimit(client.apiKey, client.tier);
     if (!allowed) {
-      await logRequest(client.apiKey, `/api/v1/violations/${params.id}`, null, null, ip, null, 429);
+      await logRequest(client.apiKey, `/api/v1/violations/${(await params).id}`, null, null, ip, null, 429);
       return NextResponse.json(addWatermark({ error: 'Rate limit exceeded' }, client), { status: 429 });
     }
 
     const rows = await db
       .select()
       .from(blocks)
-      .where(eq(blocks.blockId, params.id))
+      .where(eq(blocks.blockId, (await params).id))
       .limit(1);
 
     if (rows.length === 0) {
-      await logRequest(client.apiKey, `/api/v1/violations/${params.id}`, null, null, ip, null, 404);
+      await logRequest(client.apiKey, `/api/v1/violations/${(await params).id}`, null, null, ip, null, 404);
       return NextResponse.json(addWatermark({ error: 'Block not found' }, client), { status: 404 });
     }
 
@@ -47,7 +47,7 @@ export async function GET(
       company: coRows[0] ?? null,
     };
 
-    await logRequest(client.apiKey, `/api/v1/violations/${params.id}`, coRows[0]?.ticker ?? null, null, ip, null, 200);
+    await logRequest(client.apiKey, `/api/v1/violations/${(await params).id}`, coRows[0]?.ticker ?? null, null, ip, null, 200);
 
     return NextResponse.json(
       addWatermark(block, client),
@@ -56,7 +56,7 @@ export async function GET(
   } catch (err: unknown) {
     const status = (err as { status?: number }).status ?? 500;
     const message = err instanceof Error ? err.message : 'Internal error';
-    if (apiKey) await logRequest(apiKey, `/api/v1/violations/${params.id}`, null, null, ip, null, status).catch(() => {});
+    if (apiKey) await logRequest(apiKey, `/api/v1/violations/${(await params).id}`, null, null, ip, null, status).catch(() => {});
     return NextResponse.json({ error: message }, { status });
   }
 }
