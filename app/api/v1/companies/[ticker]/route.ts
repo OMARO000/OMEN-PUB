@@ -11,10 +11,10 @@ import { VIOLATION_CATEGORIES, VIOLATION_TAGS } from '@/db/schema';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { ticker: string } },
+  { params }: { params: Promise<{ ticker: string }> },
 ) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
-  const ticker = params.ticker.toUpperCase();
+  const ticker = (await params).ticker.toUpperCase();
   let apiKey = '';
 
   try {

@@ -101,7 +101,7 @@ export default async function BlockDetailPage({
     try { return JSON.parse(block.verificationJson ?? '{}'); } catch { return {}; }
   })();
 
-  const brokenPromise: Record<string, unknown> | null = (() => {
+  const brokenPromise: Record<string, any> | null = (() => {
     try { return block.brokenPromiseJson ? JSON.parse(block.brokenPromiseJson) : null; } catch { return null; }
   })();
 
@@ -410,7 +410,7 @@ export default async function BlockDetailPage({
       )}
 
       {/* IPFS */}
-      {block.ipfsCid && (
+      {(block as any).ipfsCid && (
         <section style={{ marginBottom: '2.5rem' }}>
           <p style={{
             margin: '0 0 1rem',
@@ -426,12 +426,12 @@ export default async function BlockDetailPage({
             <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--omen-muted)' }}>
               CID{' '}
               <a
-                href={`https://gateway.pinata.cloud/ipfs/${block.ipfsCid}`}
+                href={`https://gateway.pinata.cloud/ipfs/${(block as any).ipfsCid}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'var(--omen-accent)', textDecoration: 'none', fontFamily: 'inherit' }}
               >
-                {block.ipfsCid}
+                {(block as any).ipfsCid}
               </a>
             </p>
             <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--omen-muted)' }}>

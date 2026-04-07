@@ -206,7 +206,6 @@ function AlternativeCard({
     cursor: isPaid && !voting ? 'pointer' : 'not-allowed',
     opacity: voting ? 0.5 : 1,
     letterSpacing: '0.05em',
-    title: isPaid ? '' : 'Join Data Co-op to vote',
   });
 
   return (

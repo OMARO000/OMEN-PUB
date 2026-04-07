@@ -21,7 +21,7 @@ export function ensureCompany(ticker: string, name: string): number {
 
   const inserted = db
     .insert(companies)
-    .values({ name, slug })
+    .values({ name, slug, ticker: slug.toUpperCase() })
     .returning({ id: companies.id })
     .get();
 
@@ -54,7 +54,7 @@ export function stageBlock(block: RawBlock, companyId: number): number {
 
   const inserted = db
     .insert(stagedBlocks)
-    .values(input)
+    .values(input as any)
     .returning({ id: stagedBlocks.id })
     .get();
 

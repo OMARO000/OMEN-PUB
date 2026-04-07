@@ -44,8 +44,8 @@ export async function pinBlock(block: RawBlock): Promise<IpfsResult> {
         ticker: block.companyTicker,
         category: block.category,
         violationTag: block.violationTag,
-      } as Record<string, string>,
-    },
+      },
+    } as any,
     pinataOptions: {
       cidVersion: 1,
     },

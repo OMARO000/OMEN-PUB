@@ -287,16 +287,16 @@ export default async function CompanyPage({
                 )}
 
                 {/* IPFS CID */}
-                {block.ipfsCid && (
+                {(block as any).ipfsCid && (
                   <p style={{ margin: '0.75rem 0 0', fontSize: '0.65rem', color: 'var(--omen-muted)', letterSpacing: '0.04em' }}>
                     IPFS{' '}
                     <a
-                      href={`https://gateway.pinata.cloud/ipfs/${block.ipfsCid}`}
+                      href={`https://gateway.pinata.cloud/ipfs/${(block as any).ipfsCid}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: 'var(--omen-accent)', textDecoration: 'none', fontFamily: 'inherit' }}
                     >
-                      {block.ipfsCid}
+                      {(block as any).ipfsCid}
                     </a>
                   </p>
                 )}

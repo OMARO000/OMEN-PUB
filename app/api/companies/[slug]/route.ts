@@ -13,7 +13,7 @@ export async function GET(
     const company = db.query.companies.findFirst({
       where: eq(companies.slug, slug),
       with: {
-        violations: {
+        blocks: {
           orderBy: (v, { desc }) => [desc(v.createdAt)],
         },
       },
