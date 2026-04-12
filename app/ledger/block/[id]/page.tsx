@@ -31,6 +31,39 @@ const SOURCE_DISCLAIMERS = [
   'Data may be outdated — relayed from court databases.',
 ];
 
+const HAI_PILLARS: Record<string, { number: string; name: string; description: string }> = {
+  I:    { number: 'I',    name: 'Transparency',  description: 'AI systems must be open about their nature, capabilities, and limitations.' },
+  II:   { number: 'II',   name: 'Human Agency',  description: 'AI must preserve and strengthen human autonomy and decision-making capacity.' },
+  IV:   { number: 'IV',   name: 'Accountability', description: 'AI systems and their operators must be answerable for outcomes and harms.' },
+  VI:   { number: 'VI',   name: 'Non-Deception', description: 'AI must not mislead, manipulate, or create false impressions.' },
+  VII:  { number: 'VII',  name: 'Privacy',       description: 'AI systems must respect and protect personal data and individual privacy.' },
+  VIII: { number: 'VIII', name: 'Societal Harm', description: 'AI must not be used in ways that cause broad harm to communities or ecosystems.' },
+  IX:   { number: 'IX',   name: 'Human Dignity', description: 'AI must uphold the inherent worth and rights of every person.' },
+}
+
+function getRelevantPillars(block: {
+  category: string;
+  tag: string;
+  regulatoryBasis?: string | null;
+}): string[] {
+  const pillars: string[] = []
+  const cat = block.category?.toUpperCase()
+  const tag = block.tag?.toUpperCase()
+  const basis = (block.regulatoryBasis || '').toLowerCase()
+
+  if (cat === 'PRI') { pillars.push('VII'); pillars.push('II') }
+  if (cat === 'LAB') { pillars.push('IX') }
+  if (cat === 'ETH') { pillars.push('I') }
+  if (cat === 'ENV' || cat === 'ANT') { pillars.push('VIII') }
+  if (tag === 'UGLY' || tag === 'BROKEN_PROMISE') { pillars.push('IV') }
+  if (tag === 'BROKEN_PROMISE' && cat === 'ETH') { pillars.push('VI') }
+  if (basis.includes('disclosure') || basis.includes('reporting') || basis.includes('transparency')) {
+    if (!pillars.includes('I')) pillars.push('I')
+  }
+
+  return [...new Set(pillars)]
+}
+
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
@@ -296,6 +329,83 @@ export default async function BlockDetailPage({
           )}
         </div>
       </section>
+
+      {/* HAI Standard — implicated pillars */}
+      {(() => {
+        const pillars = getRelevantPillars({
+          category: block.category,
+          tag: block.violationTag,
+          regulatoryBasis: block.regulatoryBasis,
+        })
+        if (pillars.length === 0) return null
+        return (
+          <section style={{ marginBottom: '32px' }}>
+            <p style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              color: 'var(--omen-accent)',
+              letterSpacing: '0.12em',
+              marginBottom: '12px',
+            }}>
+              HAI STANDARD — IMPLICATED PILLARS
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {pillars.map(p => {
+                const pillar = HAI_PILLARS[p]
+                return (
+                  <div key={p} style={{
+                    border: '1px solid rgba(176,176,176,0.12)',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    gap: '14px',
+                    alignItems: 'flex-start',
+                  }}>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      color: 'var(--omen-accent)',
+                      letterSpacing: '0.1em',
+                      minWidth: '32px',
+                      paddingTop: '1px',
+                    }}>
+                      {pillar.number}
+                    </span>
+                    <div>
+                      <p style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'rgba(255,255,255,0.7)',
+                        letterSpacing: '0.06em',
+                        margin: '0 0 3px 0',
+                      }}>
+                        {pillar.name}
+                      </p>
+                      <p style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'rgba(255,255,255,0.3)',
+                        lineHeight: 1.6,
+                        margin: 0,
+                      }}>
+                        {pillar.description}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'rgba(255,255,255,0.2)',
+              marginTop: '10px',
+              letterSpacing: '0.06em',
+            }}>
+              HAI Standard v1.1 — <a href="https://haiproject.xyz" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(176,176,176,0.4)', textDecoration: 'none' }}>haiproject.xyz</a>
+            </p>
+          </section>
+        )
+      })()}
 
       {/* Broken promise check */}
       {brokenPromise && (brokenPromise.priorViolationExists || brokenPromise.priorCommitmentExists) && (
