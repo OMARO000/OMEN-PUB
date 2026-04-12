@@ -11,14 +11,14 @@
   --omen-muted: rgba(255, 255, 255, 0.35);
   --omen-surface: #111111;
   --omen-sidebar: #0e0e0f;
-  --omen-accent: #4CAF7D;
+  --omen-accent: #B0B0B0;
 
   /* ViolationTag colors */
   --tag-ugly: #E05C5C;
   --tag-broken-promise: #d4af37;
   --tag-bad: #cd853f;
   --tag-questionable: #708090;
-  --tag-good: #4CAF7D;
+  --tag-good: #B0B0B0;
 
   /* Layout */
   --sidebar-width: 220px;

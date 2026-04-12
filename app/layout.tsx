@@ -106,7 +106,7 @@ export default function RootLayout({
                 marginTop: '0.4rem',
                 padding: '0.25rem 0.5rem',
                 border: '1px solid var(--omen-accent)',
-                background: 'rgba(76,175,125,0.06)',
+                background: 'rgba(176,176,176,0.06)',
                 textDecoration: 'none',
               }}
             >AN OMARO COMPANY</a>
@@ -143,7 +143,7 @@ export default function RootLayout({
 
             <div style={{
               padding: '16px',
-              borderTop: '1px solid rgba(76,175,125,0.15)',
+              borderTop: '1px solid rgba(176,176,176,0.15)',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',

@@ -361,7 +361,7 @@ export default function FinancialsPage() {
       color: 'var(--omen-muted)',
       letterSpacing: '0.04em',
     } as React.CSSProperties,
-    green: { color: '#4CAF7D' } as React.CSSProperties,
+    green: { color: '#B0B0B0' } as React.CSSProperties,
     red: { color: 'var(--tag-ugly)' } as React.CSSProperties,
     amber: { color: 'var(--tag-broken-promise)' } as React.CSSProperties,
   }
