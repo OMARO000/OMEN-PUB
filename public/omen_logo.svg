@@ -10,19 +10,19 @@
   </style>
 
   <g transform="translate(340,340)">
-    <circle r="260" fill="none" stroke="#4CAF7D" stroke-width="4"/>
-    <circle cx="0" cy="-60" r="160" fill="none" stroke="#4CAF7D" stroke-width="3.5"/>
-    <circle cx="0" cy="60" r="160" fill="none" stroke="#4CAF7D" stroke-width="3.5"/>
+    <circle r="260" fill="none" stroke="#B0B0B0" stroke-width="4"/>
+    <circle cx="0" cy="-60" r="160" fill="none" stroke="#B0B0B0" stroke-width="3.5"/>
+    <circle cx="0" cy="60" r="160" fill="none" stroke="#B0B0B0" stroke-width="3.5"/>
 
     <g class="eye-blink">
-      <path d="M -138,0 Q 0,-130 138,0" fill="none" stroke="#4CAF7D" stroke-width="3.5"/>
-      <path d="M -138,0 Q 0,130 138,0" fill="none" stroke="#4CAF7D" stroke-width="3.5"/>
-      <circle r="68" fill="none" stroke="#4CAF7D" stroke-width="1.2"/>
-      <circle r="58" fill="none" stroke="#4CAF7D" stroke-width="0.8"/>
-      <circle r="48" fill="none" stroke="#4CAF7D" stroke-width="0.7"/>
-      <circle r="38" fill="none" stroke="#4CAF7D" stroke-width="0.6"/>
-      <circle r="28" fill="none" stroke="#4CAF7D" stroke-width="0.6"/>
-      <g fill="none" stroke="#4CAF7D" stroke-width="0.6">
+      <path d="M -138,0 Q 0,-130 138,0" fill="none" stroke="#B0B0B0" stroke-width="3.5"/>
+      <path d="M -138,0 Q 0,130 138,0" fill="none" stroke="#B0B0B0" stroke-width="3.5"/>
+      <circle r="68" fill="none" stroke="#B0B0B0" stroke-width="1.2"/>
+      <circle r="58" fill="none" stroke="#B0B0B0" stroke-width="0.8"/>
+      <circle r="48" fill="none" stroke="#B0B0B0" stroke-width="0.7"/>
+      <circle r="38" fill="none" stroke="#B0B0B0" stroke-width="0.6"/>
+      <circle r="28" fill="none" stroke="#B0B0B0" stroke-width="0.6"/>
+      <g fill="none" stroke="#B0B0B0" stroke-width="0.6">
         <line x1="0" y1="-68" x2="0" y2="-18"/>
         <line x1="0" y1="18" x2="0" y2="68"/>
         <line x1="-68" y1="0" x2="-18" y2="0"/>
@@ -46,7 +46,7 @@
         <path d="M -42,-42 Q 0,-60 42,-42" stroke-width="0.5"/>
         <path d="M -42,42 Q 0,60 42,42" stroke-width="0.5"/>
       </g>
-      <circle r="10" fill="#4CAF7D"/>
+      <circle r="10" fill="#B0B0B0"/>
     </g>
   </g>
 </svg>
