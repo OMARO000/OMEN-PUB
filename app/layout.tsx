@@ -140,6 +140,44 @@ export default function RootLayout({
                 ))}
               </ul>
             </nav>
+
+            <div style={{
+              padding: '16px',
+              borderTop: '1px solid rgba(76,175,125,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              marginTop: 'auto',
+            }}>
+              <a href="/dashboard/login" style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                color: 'var(--omen-accent)',
+                textDecoration: 'none',
+                letterSpacing: '0.08em',
+                padding: '8px 12px',
+                border: '1px solid var(--omen-accent)',
+                borderRadius: '4px',
+                textAlign: 'center',
+                display: 'block',
+              }}>
+                [ log in ]
+              </a>
+              <a href="/dashboard/signup" style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                color: '#0b0b0c',
+                textDecoration: 'none',
+                letterSpacing: '0.08em',
+                padding: '8px 12px',
+                background: 'var(--omen-accent)',
+                borderRadius: '4px',
+                textAlign: 'center',
+                display: 'block',
+              }}>
+                [ create account ]
+              </a>
+            </div>
           </div>
 
           {/* Main content */}
