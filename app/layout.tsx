@@ -152,11 +152,11 @@ export default function RootLayout({
               <a href="/dashboard/login" style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                color: 'var(--omen-accent)',
+                color: '#0b0b0c',
                 textDecoration: 'none',
                 letterSpacing: '0.08em',
                 padding: '8px 12px',
-                border: '1px solid var(--omen-accent)',
+                background: 'var(--omen-accent)',
                 borderRadius: '4px',
                 textAlign: 'center',
                 display: 'block',
