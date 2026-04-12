@@ -3,6 +3,7 @@ import { IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
 import Sidebar from './components/Sidebar';
 import InstallPrompt from './components/InstallPrompt';
+import Screensaver from './components/Screensaver';
 import './globals.css';
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -204,6 +205,7 @@ export default function RootLayout({
         </footer>
 
         <InstallPrompt />
+        <Screensaver />
       </body>
     </html>
   );
