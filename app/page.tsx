@@ -83,6 +83,77 @@ export default function HomePage() {
             </div>
           </dl>
         </section>
+
+        <section style={{
+          marginTop: '48px',
+          paddingTop: '32px',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: 'var(--omen-accent)',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '12px',
+          }}>
+            [HAI STANDARD]
+          </p>
+          <p style={{
+            fontSize: '15px',
+            color: 'rgba(255,255,255,0.85)',
+            lineHeight: 1.7,
+            marginBottom: '8px',
+          }}>
+            OMEN is built to the HAI Standard.
+          </p>
+          <p style={{
+            fontSize: '13px',
+            color: 'rgba(255,255,255,0.45)',
+            lineHeight: 1.7,
+            marginBottom: '20px',
+          }}>
+            The HAI Standard holds AI systems accountable to human values. OMEN is
+            one of the first platforms built to meet it. If that matters to you,
+            support the standard that makes tools like this possible.
+          </p>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <a
+              href="https://haiproject.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                color: 'var(--omen-accent)',
+                textDecoration: 'none',
+                letterSpacing: '0.06em',
+                border: '1px solid var(--omen-accent)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+              }}
+            >
+              [learn about the HAI Standard →]
+            </a>
+            <a
+              href="https://haiproject.xyz/#pledge"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                color: 'rgba(255,255,255,0.4)',
+                textDecoration: 'none',
+                letterSpacing: '0.06em',
+                border: '1px solid rgba(255,255,255,0.15)',
+                padding: '8px 16px',
+                borderRadius: '4px',
+              }}
+            >
+              [take the pledge →]
+            </a>
+          </div>
+        </section>
       </article>
     </div>
   );
