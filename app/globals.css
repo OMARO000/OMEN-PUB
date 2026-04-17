@@ -25,6 +25,11 @@
   --header-height: 49px;
 }
 
+/* Light mode — invert SVG logo strokes to dark */
+html.light .omen-logo {
+  filter: invert(1);
+}
+
 /* Light mode overrides */
 html.light {
   --omen-bg: #EDEDEA;

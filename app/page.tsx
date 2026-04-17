@@ -39,7 +39,7 @@ export default function HomePage() {
         <section style={{
           marginTop: '48px',
           paddingTop: '32px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid var(--omen-border)',
           marginBottom: '3rem',
         }}>
           <p style={{
@@ -54,7 +54,7 @@ export default function HomePage() {
           </p>
           <p style={{
             fontSize: '15px',
-            color: 'rgba(255,255,255,0.85)',
+            color: 'var(--omen-text)',
             lineHeight: 1.7,
             marginBottom: '8px',
           }}>
@@ -62,7 +62,7 @@ export default function HomePage() {
           </p>
           <p style={{
             fontSize: '13px',
-            color: 'rgba(255,255,255,0.45)',
+            color: 'var(--omen-muted)',
             lineHeight: 1.7,
             marginBottom: '20px',
           }}>
@@ -95,10 +95,10 @@ export default function HomePage() {
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '12px',
-                color: 'rgba(255,255,255,0.4)',
+                color: 'var(--omen-muted)',
                 textDecoration: 'none',
                 letterSpacing: '0.06em',
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: '1px solid var(--omen-border)',
                 padding: '8px 16px',
                 borderRadius: '4px',
               }}
