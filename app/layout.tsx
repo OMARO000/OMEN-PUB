@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Sidebar from './components/Sidebar';
 import InstallPrompt from './components/InstallPrompt';
 import Screensaver from './components/Screensaver';
+import ThemeProvider from './components/ThemeProvider';
+import ThemeToggle from './components/ThemeToggle';
 import './globals.css';
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -66,6 +68,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <ThemeProvider>
         <a href="#main-content" className="skip-nav">
           Skip to main content
         </a>
@@ -142,6 +145,8 @@ export default function RootLayout({
               </ul>
             </nav>
 
+            <ThemeToggle />
+
             <div style={{
               padding: '16px',
               borderTop: '1px solid rgba(176,176,176,0.15)',
@@ -206,6 +211,7 @@ export default function RootLayout({
 
         <InstallPrompt />
         <Screensaver />
+        </ThemeProvider>
       </body>
     </html>
   );
