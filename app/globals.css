@@ -25,6 +25,17 @@
   --header-height: 49px;
 }
 
+/* Light mode overrides */
+html.light {
+  --omen-bg: #EDEDEA;
+  --omen-text: #111110;
+  --omen-border: rgba(0, 0, 0, 0.12);
+  --omen-muted: #666660;
+  --omen-surface: #e2e2de;
+  --omen-sidebar: #e2e2de;
+  --omen-accent: #2a2a28;
+}
+
 /* ---------------------------------------------------------------------------
    Base
    --------------------------------------------------------------------------- */
