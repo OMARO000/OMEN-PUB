@@ -13,7 +13,7 @@ export default function ThemeToggle() {
   const inactiveStyle: React.CSSProperties = {
     background: 'transparent',
     color: 'var(--omen-muted)',
-    border: '1px solid transparent',
+    border: '1px solid var(--omen-border)',
   }
 
   const baseStyle: React.CSSProperties = {

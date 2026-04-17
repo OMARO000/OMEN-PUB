@@ -86,7 +86,7 @@ export default function RootLayout({
             overflowY: 'auto',
           }}>
             <Link href="/" style={{ textDecoration: 'none' }} aria-label="OMEN — Home">
-              <img src="/omen_logo.svg" alt="" width="320" height="320" style={{ display: 'block' }} />
+              <img src="/omen_logo.svg" alt="" width="320" height="320" className="omen-logo" style={{ display: 'block' }} />
               <span style={{
                 display: 'block',
                 textAlign: 'center',
@@ -158,7 +158,7 @@ export default function RootLayout({
               <a href="/dashboard/login" style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                color: '#0b0b0c',
+                color: 'var(--omen-bg)',
                 textDecoration: 'none',
                 letterSpacing: '0.08em',
                 padding: '8px 12px',
@@ -172,7 +172,7 @@ export default function RootLayout({
               <a href="/dashboard/signup" style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '11px',
-                color: '#0b0b0c',
+                color: 'var(--omen-bg)',
                 textDecoration: 'none',
                 letterSpacing: '0.08em',
                 padding: '8px 12px',
