@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
+import { integer, pgTable, serial, text, real, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -50,41 +50,41 @@ export type OcaCategory = (typeof OCA_CATEGORIES)[number];
 // companies
 // ---------------------------------------------------------------------------
 
-export const companies = sqliteTable('companies', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const companies = pgTable('companies', {
+  id: serial('id').primaryKey(),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   ticker: text('ticker').notNull().unique(),
   tier: integer('tier'),
   description: text('description'),
   website: text('website'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // users
 // ---------------------------------------------------------------------------
 
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
   accountNumber: text('account_number').notNull().unique(),
   role: text('role', { enum: ['contributor', 'reviewer', 'admin'] }).notNull().default('contributor'),
-  isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
-  paidAt: integer('paid_at', { mode: 'timestamp_ms' }),
+  isPaid: boolean('is_paid').notNull().default(false),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
   subscriptionId: text('subscription_id'),
   // JSON array of ticker strings: ["META","GOOGL","AMZN"]
-  companiesTracked: text('companies_tracked').notNull().default('[]'),
+  companiesTracked: jsonb('companies_tracked').notNull().default([]),
   bonusBalance: real('bonus_balance').notNull().default(0.0),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // blocks  (approved — promoted from staged_blocks)
 // ---------------------------------------------------------------------------
 
-export const blocks = sqliteTable('blocks', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const blocks = pgTable('blocks', {
+  id: serial('id').primaryKey(),
   blockId: text('block_id').notNull().unique(),           // OM-YYYY-CAT-TICKER-###
   companyId: integer('company_id').notNull().references(() => companies.id),
   category: text('category').$type<ViolationCategory>().notNull(),
@@ -119,16 +119,16 @@ export const blocks = sqliteTable('blocks', {
   // Timestamps
   violationDate: text('violation_date'),                  // YYYY-MM-DD from agent
   researchedAt: text('researched_at').notNull(),
-  recordedAt: integer('recorded_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // staged_blocks  (agent output — pending review)
 // ---------------------------------------------------------------------------
 
-export const stagedBlocks = sqliteTable('staged_blocks', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const stagedBlocks = pgTable('staged_blocks', {
+  id: serial('id').primaryKey(),
   blockId: text('block_id').notNull().unique(),           // OM-YYYY-CAT-TICKER-###
   companyId: integer('company_id').notNull().references(() => companies.id),
   category: text('category').$type<ViolationCategory>().notNull(),
@@ -166,131 +166,131 @@ export const stagedBlocks = sqliteTable('staged_blocks', {
   // Timestamps
   violationDate: text('violation_date'),
   researchedAt: text('researched_at').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // company_policies
 // ---------------------------------------------------------------------------
 
-export const companyPolicies = sqliteTable('company_policies', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const companyPolicies = pgTable('company_policies', {
+  id: serial('id').primaryKey(),
   companyId: integer('company_id').notNull().references(() => companies.id),
   title: text('title').notNull(),
   content: text('content').notNull(),
   policyUrl: text('policy_url'),
-  effectiveDate: integer('effective_date', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  effectiveDate: timestamp('effective_date', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // alternatives  (OCA — OMEN Crowdsourced Alternatives)
 // ---------------------------------------------------------------------------
 
-export const alternatives = sqliteTable('alternatives', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const alternatives = pgTable('alternatives', {
+  id: serial('id').primaryKey(),
   name: text('name').notNull(),
   category: text('category').$type<OcaCategory>().notNull(),
   websiteUrl: text('website_url'),
   replaces: text('replaces'),          // "What does it replace?" max 100
   whyBetter: text('why_better'),       // "Why is it better?" max 500
-  openSource: integer('open_source', { mode: 'boolean' }).notNull().default(false),
-  selfHostable: integer('self_hostable', { mode: 'boolean' }).notNull().default(false),
+  openSource: boolean('open_source').notNull().default(false),
+  selfHostable: boolean('self_hostable').notNull().default(false),
   upvotes: integer('upvotes').notNull().default(0),
   downvotes: integer('downvotes').notNull().default(0),
   status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
   rejectionReason: text('rejection_reason'),
   submittedBy: text('submitted_by'),   // accountNumber, plain text
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // alternative_votes  (one vote per account per alternative)
 // ---------------------------------------------------------------------------
 
-export const alternativeVotes = sqliteTable('alternative_votes', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const alternativeVotes = pgTable('alternative_votes', {
+  id: serial('id').primaryKey(),
   alternativeId: integer('alternative_id').notNull().references(() => alternatives.id),
   accountNumber: text('account_number').notNull(),
   vote: text('vote', { enum: ['up', 'down'] }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // votes  (block votes — legacy, kept for future use)
 // ---------------------------------------------------------------------------
 
-export const votes = sqliteTable('votes', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const votes = pgTable('votes', {
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id),
   blockId: integer('block_id').references(() => blocks.id),
   value: integer('value').notNull(), // +1 or -1
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // sources  (approved source registry)
 // ---------------------------------------------------------------------------
 
-export const sources = sqliteTable('sources', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const sources = pgTable('sources', {
+  id: serial('id').primaryKey(),
   name: text('name').notNull(),
   domain: text('domain').notNull(),
   sourceType: text('source_type').$type<SourceType>().notNull(),
   credibilityBase: integer('credibility_base').notNull().default(50),
-  isApproved: integer('is_approved', { mode: 'boolean' }).notNull().default(false),
-  isBlocklisted: integer('is_blocklisted', { mode: 'boolean' }).notNull().default(false),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  isApproved: boolean('is_approved').notNull().default(false),
+  isBlocklisted: boolean('is_blocklisted').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // documents  (file attachments on approved blocks)
 // ---------------------------------------------------------------------------
 
-export const documents = sqliteTable('documents', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const documents = pgTable('documents', {
+  id: serial('id').primaryKey(),
   blockId: integer('block_id').references(() => blocks.id),
   title: text('title').notNull(),
   fileUrl: text('file_url').notNull(),
   mimeType: text('mime_type'),
   contentHash: text('content_hash'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // feedback
 // ---------------------------------------------------------------------------
 
-export const feedback = sqliteTable('feedback', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const feedback = pgTable('feedback', {
+  id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
   blockId: integer('block_id').references(() => blocks.id),
   content: text('content').notNull(),
   feedbackType: text('feedback_type', { enum: ['correction', 'addition', 'dispute', 'general'] }).notNull().default('general'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // api_clients
 // ---------------------------------------------------------------------------
 
-export const apiClients = sqliteTable('api_clients', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const apiClients = pgTable('api_clients', {
+  id: serial('id').primaryKey(),
   apiKey: text('api_key').notNull().unique(),
   clientName: text('client_name').notNull(),
   email: text('email').notNull(),
   useCase: text('use_case').notNull(),
   tier: text('tier').$type<ApiTier>().notNull().default('STARTER'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // api_audit_logs
 // ---------------------------------------------------------------------------
 
-export const apiAuditLogs = sqliteTable('api_audit_logs', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const apiAuditLogs = pgTable('api_audit_logs', {
+  id: serial('id').primaryKey(),
   apiKey: text('api_key').notNull(),
   endpoint: text('endpoint').notNull(),
   company: text('company'),
@@ -298,29 +298,29 @@ export const apiAuditLogs = sqliteTable('api_audit_logs', {
   ipAddress: text('ip_address'),
   useCase: text('use_case'),
   statusCode: integer('status_code').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // legal_attacks
 // ---------------------------------------------------------------------------
 
-export const legalAttacks = sqliteTable('legal_attacks', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const legalAttacks = pgTable('legal_attacks', {
+  id: serial('id').primaryKey(),
   companyId: integer('company_id').references(() => companies.id),
   title: text('title').notNull(),
   description: text('description').notNull(),
   status: text('status', { enum: ['active', 'resolved', 'dismissed'] }).notNull().default('active'),
-  filedAt: integer('filed_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  filedAt: timestamp('filed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // contributions  (Data Co-op — user-submitted data)
 // ---------------------------------------------------------------------------
 
-export const contributions = sqliteTable('contributions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const contributions = pgTable('contributions', {
+  id: serial('id').primaryKey(),
   accountNumber: text('account_number').notNull(),
   type: text('type').$type<ContributionType>().notNull(),
   title: text('title').notNull(),
@@ -331,23 +331,23 @@ export const contributions = sqliteTable('contributions', {
   status: text('status', { enum: ['pending', 'approved', 'rejected', 'paid'] }).notNull().default('pending'),
   rewardAmount: real('reward_amount'),
   rejectionReason: text('rejection_reason'),
-  reviewedAt: integer('reviewed_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
 // contribution_payments  (withdrawal requests)
 // ---------------------------------------------------------------------------
 
-export const contributionPayments = sqliteTable('contribution_payments', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const contributionPayments = pgTable('contribution_payments', {
+  id: serial('id').primaryKey(),
   accountNumber: text('account_number').notNull(),
   amount: real('amount').notNull(),
   payoutMethod: text('payout_method').$type<PayoutMethod>().notNull(),
   payoutAddress: text('payout_address'),
   status: text('status', { enum: ['pending', 'processing', 'completed', 'failed'] }).notNull().default('pending'),
-  requestedAt: integer('requested_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-  processedAt: integer('processed_at', { mode: 'timestamp_ms' }),
+  requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
   notes: text('notes'),
 });
 
@@ -355,13 +355,13 @@ export const contributionPayments = sqliteTable('contribution_payments', {
 // analytics_events
 // ---------------------------------------------------------------------------
 
-export const analyticsEvents = sqliteTable('analytics_events', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const analyticsEvents = pgTable('analytics_events', {
+  id: serial('id').primaryKey(),
   event: text('event').notNull(),
   properties: text('properties'),
   userId: integer('user_id').references(() => users.id),
   ipHash: text('ip_hash'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
