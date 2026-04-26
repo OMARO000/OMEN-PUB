@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const VIOLATION_TYPES = [
@@ -25,9 +26,20 @@ export default function Sidebar() {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<CompanyResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [violationFilters, setViolationFilters] = useState<Set<string>>(new Set());
-  const [tierFilters, setTierFilters] = useState<Set<number>>(new Set());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const isLedger = pathname === '/ledger';
+
+  const catParam = searchParams.get('cat') ?? '';
+  const tierParam = searchParams.get('tier') ?? '';
+  const violationFilters = new Set(catParam.split(',').filter(Boolean));
+  const tierFilters = new Set(
+    tierParam.split(',').map(Number).filter(n => !isNaN(n) && n > 0),
+  );
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -59,34 +71,40 @@ export default function Sidebar() {
     };
   }, [search]);
 
-  function toggleViolation(type: string) {
-    setViolationFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
+  function buildFilterUrl(nextCats: Set<string>, nextTiers: Set<number>): string {
+    const p = new URLSearchParams();
+    if (nextCats.size > 0) p.set('cat', [...nextCats].join(','));
+    if (nextTiers.size > 0) p.set('tier', [...nextTiers].join(','));
+    const qs = p.toString();
+    return qs ? `/ledger?${qs}` : '/ledger';
+  }
+
+  function toggleViolation(code: string) {
+    const next = new Set(violationFilters);
+    if (next.has(code)) next.delete(code);
+    else next.add(code);
+    router.push(buildFilterUrl(next, tierFilters));
   }
 
   function toggleTier(tier: number) {
-    setTierFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(tier)) next.delete(tier);
-      else next.add(tier);
-      return next;
-    });
+    const next = new Set(tierFilters);
+    if (next.has(tier)) next.delete(tier);
+    else next.add(tier);
+    router.push(buildFilterUrl(violationFilters, next));
   }
+
+  const toggleLabel = isOpen ? '[CLOSE]' : (isLedger ? '[FILTER]' : '[SEARCH]');
 
   return (
     <>
       <button
         className="sidebar-toggle"
         onClick={() => setIsOpen((o) => !o)}
-        aria-label={isOpen ? 'Close filters' : 'Open filters'}
+        aria-label={isOpen ? 'Close sidebar' : (isLedger ? 'Open filters' : 'Open search')}
         aria-expanded={isOpen}
         aria-controls="sidebar-panel"
       >
-        {isOpen ? '[CLOSE]' : '[FILTER]'}
+        {toggleLabel}
       </button>
 
       <aside
@@ -115,7 +133,6 @@ export default function Sidebar() {
             />
           </div>
 
-          {/* Search results */}
           {(isSearching || results.length > 0 || (search.trim() && !isSearching)) && (
             <div aria-live="polite" aria-label="Search results">
               {isSearching && (
@@ -147,49 +164,52 @@ export default function Sidebar() {
           )}
         </div>
 
-        <div className="sidebar-divider" />
+        {/* Filter sections — ledger only */}
+        {isLedger && (
+          <>
+            <div className="sidebar-divider" />
 
-        {/* Violation Type Filters */}
-        <div className="sidebar-section">
-          <p className="sidebar-label">FILTER BY VIOLATION TYPE</p>
-          <ul role="list" className="sidebar-checklist">
-            {VIOLATION_TYPES.map(({ code, label }) => (
-              <li key={code}>
-                <label className="sidebar-check-label">
-                  <input
-                    type="checkbox"
-                    className="sidebar-checkbox"
-                    checked={violationFilters.has(code)}
-                    onChange={() => toggleViolation(code)}
-                  />
-                  <span>{label}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <div className="sidebar-section">
+              <p className="sidebar-label">FILTER BY VIOLATION TYPE</p>
+              <ul role="list" className="sidebar-checklist">
+                {VIOLATION_TYPES.map(({ code, label }) => (
+                  <li key={code}>
+                    <label className="sidebar-check-label">
+                      <input
+                        type="checkbox"
+                        className="sidebar-checkbox"
+                        checked={violationFilters.has(code)}
+                        onChange={() => toggleViolation(code)}
+                      />
+                      <span>{label}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-        <div className="sidebar-divider" />
+            <div className="sidebar-divider" />
 
-        {/* Tier Filters */}
-        <div className="sidebar-section">
-          <p className="sidebar-label">FILTER BY TIER</p>
-          <ul role="list" className="sidebar-checklist">
-            {TIERS.map((tier) => (
-              <li key={tier}>
-                <label className="sidebar-check-label">
-                  <input
-                    type="checkbox"
-                    className="sidebar-checkbox"
-                    checked={tierFilters.has(tier)}
-                    onChange={() => toggleTier(tier)}
-                  />
-                  <span>TIER {tier}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <div className="sidebar-section">
+              <p className="sidebar-label">FILTER BY TIER</p>
+              <ul role="list" className="sidebar-checklist">
+                {TIERS.map((tier) => (
+                  <li key={tier}>
+                    <label className="sidebar-check-label">
+                      <input
+                        type="checkbox"
+                        className="sidebar-checkbox"
+                        checked={tierFilters.has(tier)}
+                        onChange={() => toggleTier(tier)}
+                      />
+                      <span>TIER {tier}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
       </aside>
     </>
   );

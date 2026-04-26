@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono } from 'next/font/google';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import Sidebar from './components/Sidebar';
 import InstallPrompt from './components/InstallPrompt';
@@ -192,7 +193,9 @@ export default function RootLayout({
           </main>
 
           {/* Right sidebar — search + filters */}
-          <Sidebar />
+          <Suspense fallback={null}>
+            <Sidebar />
+          </Suspense>
         </div>
 
         <footer
