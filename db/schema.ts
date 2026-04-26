@@ -25,6 +25,9 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
 export const CONFIDENCE_ROUTINGS = ['AUTO_APPROVED', 'QUICK_REVIEW', 'REJECTED'] as const;
 export type ConfidenceRouting = (typeof CONFIDENCE_ROUTINGS)[number];
 
+export const RESOLUTION_STATUSES = ['active', 'resolved_enforcement', 'resolved_dismissed', 'resolved_cleared'] as const;
+export type ResolutionStatus = (typeof RESOLUTION_STATUSES)[number];
+
 export const API_TIERS = ['STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'RESTRICTED'] as const;
 export type ApiTier = (typeof API_TIERS)[number];
 
@@ -120,6 +123,12 @@ export const blocks = pgTable('blocks', {
   brokenPromiseJson: text('broken_promise_json'),
   // IPFS
   ipfsCid: text('ipfs_cid'),
+  // Supersession chain
+  supersedesBlockId: text('supersedes_block_id'),         // block_id this record replaces
+  supersededByBlockId: text('superseded_by_block_id'),    // block_id that supersedes this record
+  // Provenance
+  promptVersion: text('prompt_version').notNull().default('OMEN_AGENT_v3.0'),
+  resolutionStatus: text('resolution_status').$type<ResolutionStatus>().notNull().default('active'),
   // Timestamps
   violationDate: text('violation_date'),                  // YYYY-MM-DD from agent
   researchedAt: text('researched_at').notNull(),
@@ -162,6 +171,12 @@ export const stagedBlocks = pgTable('staged_blocks', {
   confidenceRouting: text('confidence_routing').$type<ConfidenceRouting>().notNull(),
   // Broken promise
   brokenPromiseJson: text('broken_promise_json'),
+  // Supersession chain
+  supersedesBlockId: text('supersedes_block_id'),
+  supersededByBlockId: text('superseded_by_block_id'),
+  // Provenance
+  promptVersion: text('prompt_version').notNull().default('OMEN_AGENT_v3.0'),
+  resolutionStatus: text('resolution_status').$type<ResolutionStatus>().notNull().default('active'),
   // Review
   submittedBy: integer('submitted_by').references(() => users.id),
   reviewStatus: text('review_status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),

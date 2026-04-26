@@ -140,6 +140,9 @@ async function stageBlocks(
       brokenPromiseJson: block.brokenPromiseCheck
         ? JSON.stringify(block.brokenPromiseCheck)
         : null,
+      supersedesBlockId: block.supersedesBlockId ?? null,
+      promptVersion: block.promptVersion ?? 'OMEN_AGENT_v3.0',
+      resolutionStatus: 'active' as const,
       violationDate: block.date,
       researchedAt: block.researchedAt,
       // AUTO_APPROVED blocks get pinned and pre-approved

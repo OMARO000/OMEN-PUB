@@ -66,6 +66,9 @@ export interface RawBlock {
   brokenPromiseCheck?: BrokenPromiseCheck;
   researchedAt: string;
   researcher: string;
+  // IRIS fields — set by the agent runner, not the LLM
+  promptVersion?: string;
+  supersedesBlockId?: string;
 }
 
 // ---------------------------------------------------------------------------
