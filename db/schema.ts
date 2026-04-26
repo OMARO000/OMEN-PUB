@@ -46,15 +46,19 @@ export const OCA_CATEGORIES = [
 ] as const;
 export type OcaCategory = (typeof OCA_CATEGORIES)[number];
 
+export const IEI_TYPES = ['CORP', 'GOVT', 'NGO', 'MEDIA', 'PERSON', 'AI'] as const;
+export type IEIType = (typeof IEI_TYPES)[number];
+
 // ---------------------------------------------------------------------------
 // companies
 // ---------------------------------------------------------------------------
 
 export const companies = pgTable('companies', {
   id: serial('id').primaryKey(),
+  iei: text('iei').unique(),                    // IRIS Entity Identifier — primary external key
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
-  ticker: text('ticker').notNull().unique(),
+  ticker: text('ticker').unique(),              // mutable optional alias; was primary identifier
   tier: integer('tier'),
   description: text('description'),
   website: text('website'),

@@ -7,36 +7,34 @@ import type { RawBlock, StagedBlockInput } from './types';
 // Company upsert
 // ---------------------------------------------------------------------------
 
-export function ensureCompany(ticker: string, name: string): number {
+export async function ensureCompany(ticker: string, name: string): Promise<number> {
   const slug = ticker.toLowerCase();
 
-  const existing = db
+  const existing = await db
     .select({ id: companies.id })
     .from(companies)
     .where(eq(companies.slug, slug))
-    .limit(1)
-    .all();
+    .limit(1);
 
   if (existing.length > 0) return existing[0].id;
 
-  const inserted = db
+  const inserted = await db
     .insert(companies)
     .values({ name, slug, ticker: slug.toUpperCase() })
-    .returning({ id: companies.id })
-    .get();
+    .returning({ id: companies.id });
 
-  if (!inserted) {
+  if (!inserted[0]) {
     throw new Error(`Failed to insert company: ${name} (${ticker})`);
   }
 
-  return inserted.id;
+  return inserted[0].id;
 }
 
 // ---------------------------------------------------------------------------
 // Block staging
 // ---------------------------------------------------------------------------
 
-export function stageBlock(block: RawBlock, companyId: number): number {
+export async function stageBlock(block: RawBlock, companyId: number): Promise<number> {
   // The AI returns snake_case fields; fall back to snake_case if camelCase is absent
   const b = block as unknown as Record<string, unknown>;
   const ticker      = (block.companyTicker ?? b['company_ticker'] ?? '') as string;
@@ -52,19 +50,22 @@ export function stageBlock(block: RawBlock, companyId: number): number {
     sourceUrl: sources[0]?.url ?? null,
   };
 
-  const inserted = db
+  const inserted = await db
     .insert(stagedBlocks)
     .values(input as any)
-    .returning({ id: stagedBlocks.id })
-    .get();
+    .returning({ id: stagedBlocks.id });
 
-  if (!inserted) {
+  if (!inserted[0]) {
     throw new Error(`Failed to stage block: ${block.blockId}`);
   }
 
-  return inserted.id;
+  return inserted[0].id;
 }
 
-export function stageBlocks(blocks: RawBlock[], companyId: number): number[] {
-  return blocks.map(block => stageBlock(block, companyId));
+export async function stageBlocks(blocks: RawBlock[], companyId: number): Promise<number[]> {
+  const results: number[] = [];
+  for (const block of blocks) {
+    results.push(await stageBlock(block, companyId));
+  }
+  return results;
 }

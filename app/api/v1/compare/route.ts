@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { blocks, companies } from '@/db/schema';
 import { verifyApiKey, requireTier } from '@/lib/api/auth';
@@ -40,10 +40,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Each entry may be a stock ticker or an IEI — match against both columns
     const companyRows = await db
-      .select({ id: companies.id, name: companies.name, ticker: companies.ticker })
+      .select({ id: companies.id, name: companies.name, ticker: companies.ticker, iei: companies.iei })
       .from(companies)
-      .where(inArray(companies.ticker, tickers));
+      .where(or(inArray(companies.ticker, tickers), inArray(companies.iei, tickers)));
 
     if (companyRows.length === 0) {
       await logRequest(client.apiKey, '/api/v1/compare', null, null, ip, null, 404);

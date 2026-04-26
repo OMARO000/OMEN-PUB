@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { blocks, companies } from '@/db/schema';
 import { verifyApiKey, requireTier } from '@/lib/api/auth';
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const coRows = await db
       .select({ id: companies.id, name: companies.name, ticker: companies.ticker })
       .from(companies)
-      .where(eq(companies.ticker, ticker))
+      .where(or(eq(companies.ticker, ticker), eq(companies.iei, ticker)))
       .limit(1);
 
     if (coRows.length === 0) {

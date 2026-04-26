@@ -1,8 +1,8 @@
 import 'dotenv/config';
-import path from 'path';
 import fs from 'fs';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import path from 'path';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { researchCompany } from '../lib/agent/researchAgent';
 import { companies, stagedBlocks } from '../db/schema';
@@ -11,12 +11,15 @@ import type { Company, RawBlock, AgentRunConfig } from '../lib/agent/types';
 import { DEFAULT_AGENT_CONFIG } from '../lib/agent/types';
 
 // ---------------------------------------------------------------------------
-// DB
+// DB — own connection for this long-running script
 // ---------------------------------------------------------------------------
 
-const DB_PATH = path.resolve(process.cwd(), 'omen.db');
-const sqlite = new Database(DB_PATH);
-const db = drizzle(sqlite);
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is not set');
+
+// prepare: false required for Supabase PgBouncer transaction mode
+const client = postgres(connectionString, { prepare: false });
+const db = drizzle(client);
 
 // ---------------------------------------------------------------------------
 // Companies loader
@@ -154,7 +157,7 @@ async function stageBlocks(
 // Delay helpers
 // ---------------------------------------------------------------------------
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+const delay = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
 // ---------------------------------------------------------------------------
 // Main runner
@@ -214,7 +217,7 @@ async function run(config: AgentRunConfig = DEFAULT_AGENT_CONFIG) {
   }
 
   console.log(`\nDone. ${totalStaged} blocks staged. ${totalPinned} pinned to IPFS. ${totalErrors} errors.`);
-  sqlite.close();
+  await client.end();
 }
 
 // ---------------------------------------------------------------------------
@@ -231,4 +234,7 @@ run({
   dryRun,
   maxCompanies: maxArg ? parseInt(maxArg.split('=')[1], 10) : undefined,
   startFromIndex: startArg ? parseInt(startArg.split('=')[1], 10) : undefined,
+}).catch(err => {
+  console.error('Fatal:', err);
+  process.exit(1);
 });

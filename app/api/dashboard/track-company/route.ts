@@ -29,13 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const user = userRows[0];
-  let tracked: string[] = [];
-
-  try {
-    tracked = JSON.parse(user.companiesTracked ?? '[]');
-  } catch {
-    tracked = [];
-  }
+  let tracked: string[] = (user.companiesTracked as string[] | null) ?? [];
 
   if (action === 'add') {
     if (!tracked.includes(ticker)) {
@@ -47,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   await db
     .update(users)
-    .set({ companiesTracked: JSON.stringify(tracked) })
+    .set({ companiesTracked: tracked })
     .where(eq(users.id, user.id));
 
   return NextResponse.json({ success: true, tracked });

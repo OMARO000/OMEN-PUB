@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, inArray, like } from 'drizzle-orm';
+import { and, eq, inArray, ilike } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { companies, blocks, VIOLATION_CATEGORIES } from '@/db/schema';
 import type { ViolationCategory } from '@/db/schema';
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const conditions = [];
 
     if (search) {
-      conditions.push(like(companies.name, `%${search}%`));
+      conditions.push(ilike(companies.name, `%${search}%`));
     }
 
     if (tier) {
@@ -27,11 +27,10 @@ export async function GET(request: NextRequest) {
     // category filter: return only companies that have at least one violation
     // in the requested category
     if (category && (VIOLATION_CATEGORIES as readonly string[]).includes(category)) {
-      const matching = db
+      const matching = await db
         .selectDistinct({ companyId: blocks.companyId })
         .from(blocks)
-        .where(eq(blocks.category, category as ViolationCategory))
-        .all();
+        .where(eq(blocks.category, category as ViolationCategory));
 
       const ids = matching.map((v) => v.companyId);
       if (ids.length === 0) return NextResponse.json([]);
@@ -40,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const results = db
+    const results = await db
       .select({
         id: companies.id,
         name: companies.name,
@@ -49,8 +48,7 @@ export async function GET(request: NextRequest) {
       })
       .from(companies)
       .where(where)
-      .limit(20)
-      .all();
+      .limit(20);
 
     return NextResponse.json(results);
   } catch (err) {
