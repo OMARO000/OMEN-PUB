@@ -10,7 +10,7 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    const company = db.query.companies.findFirst({
+    const company = await db.query.companies.findFirst({
       where: eq(companies.slug, slug),
       with: {
         blocks: {

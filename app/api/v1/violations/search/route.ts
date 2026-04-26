@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, and, like, or } from 'drizzle-orm';
+import { eq, and, ilike, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { blocks, companies } from '@/db/schema';
 import { verifyApiKey } from '@/lib/api/auth';
@@ -68,10 +68,11 @@ export async function GET(request: NextRequest) {
     const conditions = [];
 
     if (company) {
+      const identifier = company.toUpperCase();
       const coRows = await db
         .select({ id: companies.id })
         .from(companies)
-        .where(eq(companies.ticker, company.toUpperCase()))
+        .where(or(eq(companies.ticker, identifier), eq(companies.iei, identifier)))
         .limit(1);
       if (coRows.length > 0) {
         conditions.push(eq(blocks.companyId, coRows[0].id));
@@ -83,8 +84,8 @@ export async function GET(request: NextRequest) {
     if (q) {
       conditions.push(
         or(
-          like(blocks.title, `%${q}%`),
-          like(blocks.formalSummary, `%${q}%`),
+          ilike(blocks.title, `%${q}%`),
+          ilike(blocks.formalSummary, `%${q}%`),
         )!,
       );
     }

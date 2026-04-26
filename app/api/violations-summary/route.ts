@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       companyRows = await db
         .select()
         .from(companies)
-        .where(ilike(companies.ticker, ticker))
+        .where(or(ilike(companies.ticker, ticker), eq(companies.iei, ticker.toUpperCase())))
         .limit(1);
     }
 

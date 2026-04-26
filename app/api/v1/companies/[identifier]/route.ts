@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { blocks, companies } from '@/db/schema';
 import { verifyApiKey } from '@/lib/api/auth';
@@ -11,10 +11,11 @@ import { VIOLATION_CATEGORIES, VIOLATION_TAGS } from '@/db/schema';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ ticker: string }> },
+  { params }: { params: Promise<{ identifier: string }> },
 ) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
-  const ticker = (await params).ticker.toUpperCase();
+  // identifier accepts either a stock ticker (e.g. "META") or an IEI (e.g. "IRIS-CORP-A1B2C3D4-001")
+  const identifier = (await params).identifier.toUpperCase();
   let apiKey = '';
 
   try {
@@ -23,18 +24,18 @@ export async function GET(
 
     const { allowed, remaining } = await checkRateLimit(client.apiKey, client.tier);
     if (!allowed) {
-      await logRequest(client.apiKey, `/api/v1/companies/${ticker}`, ticker, null, ip, null, 429);
+      await logRequest(client.apiKey, `/api/v1/companies/${identifier}`, identifier, null, ip, null, 429);
       return NextResponse.json(addWatermark({ error: 'Rate limit exceeded' }, client), { status: 429 });
     }
 
     const coRows = await db
       .select()
       .from(companies)
-      .where(eq(companies.ticker, ticker))
+      .where(or(eq(companies.ticker, identifier), eq(companies.iei, identifier)))
       .limit(1);
 
     if (coRows.length === 0) {
-      await logRequest(client.apiKey, `/api/v1/companies/${ticker}`, ticker, null, ip, null, 404);
+      await logRequest(client.apiKey, `/api/v1/companies/${identifier}`, identifier, null, ip, null, 404);
       return NextResponse.json(addWatermark({ error: 'Company not found' }, client), { status: 404 });
     }
 
@@ -74,6 +75,7 @@ export async function GET(
     }
 
     const profile = {
+      iei: company.iei,
       name: company.name,
       ticker: company.ticker,
       slug: company.slug,
@@ -86,8 +88,8 @@ export async function GET(
       severityBreakdown: bySeverity,
     };
 
-    await logRequest(client.apiKey, `/api/v1/companies/${ticker}`, ticker, null, ip, null, 200);
-    await detectPatterns(client.apiKey, ticker);
+    await logRequest(client.apiKey, `/api/v1/companies/${identifier}`, identifier, null, ip, null, 200);
+    await detectPatterns(client.apiKey, identifier);
 
     return NextResponse.json(
       addWatermark(profile, client),
@@ -96,7 +98,7 @@ export async function GET(
   } catch (err: unknown) {
     const status = (err as { status?: number }).status ?? 500;
     const message = err instanceof Error ? err.message : 'Internal error';
-    if (apiKey) await logRequest(apiKey, `/api/v1/companies/${ticker}`, ticker, null, ip, null, status).catch(() => {});
+    if (apiKey) await logRequest(apiKey, `/api/v1/companies/${identifier}`, identifier, null, ip, null, status).catch(() => {});
     return NextResponse.json({ error: message }, { status });
   }
 }

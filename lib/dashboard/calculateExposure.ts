@@ -5,7 +5,7 @@ import type { ViolationTag, ViolationCategory } from '@/db/schema';
 
 export interface CompanyExposure {
   name: string;
-  ticker: string;
+  ticker: string | null;
   violationCount: number;
   totalFines: number;
 }
@@ -46,12 +46,7 @@ export async function calculateExposure(accountNumber: string): Promise<Exposure
     };
   }
 
-  let trackedTickers: string[] = [];
-  try {
-    trackedTickers = JSON.parse(userRows[0].companiesTracked ?? '[]');
-  } catch {
-    trackedTickers = [];
-  }
+  let trackedTickers: string[] = (userRows[0].companiesTracked as string[] | null) ?? [];
 
   if (trackedTickers.length === 0) {
     return {
@@ -100,7 +95,7 @@ export async function calculateExposure(accountNumber: string): Promise<Exposure
   let totalFines = 0;
 
   // Per-company accumulators
-  const companyMap = new Map<number, { name: string; ticker: string; violationCount: number; totalFines: number }>();
+  const companyMap = new Map<number, { name: string; ticker: string | null; violationCount: number; totalFines: number }>();
   for (const c of companyRows) {
     companyMap.set(c.id, { name: c.name, ticker: c.ticker, violationCount: 0, totalFines: 0 });
   }

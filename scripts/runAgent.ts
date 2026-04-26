@@ -111,8 +111,8 @@ async function runAgent(overrides: Partial<AgentRunConfig> = {}): Promise<void> 
         result.blocksFound = blocks.length;
 
         if (!cfg.dryRun && blocks.length > 0) {
-          const companyId = ensureCompany(company.ticker, company.name);
-          const ids = stageBlocks(blocks, companyId);
+          const companyId = await ensureCompany(company.ticker, company.name);
+          const ids = await stageBlocks(blocks, companyId);
           result.blocksStaged = ids.length;
           console.log(`${blocks.length} found, ${ids.length} staged`);
         } else {
