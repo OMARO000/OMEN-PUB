@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES, OCA_CATEGORIES, CONTRIBUTION_TYPES, PAYOUT_METHODS } from '@/db/schema';
+import { VIOLATION_TAGS, VIOLATION_CATEGORIES, VIOLATION_STATUSES, SOURCE_TYPES, OCA_CATEGORIES, CONTRIBUTION_TYPES, PAYOUT_METHODS, RESOLUTION_STATUSES } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Block
@@ -12,6 +12,14 @@ export const blockSchema = z.object({
   violationTag: z.enum(VIOLATION_TAGS),
   sourceUrl: z.url('Must be a valid URL').optional().or(z.literal('')),
   recordedAt: z.iso.datetime({ offset: true }).optional(),
+  // IRIS fields
+  promptVersion: z.string().regex(
+    /^OMEN_AGENT_v\d+\.\d+$/,
+    'Must match format OMEN_AGENT_v[N].[N]',
+  ).default('OMEN_AGENT_v3.0'),
+  resolutionStatus: z.enum(RESOLUTION_STATUSES).default('active'),
+  supersedesBlockId: z.string().optional(),
+  supersededByBlockId: z.string().optional(),
 });
 
 export type BlockInput = z.infer<typeof blockSchema>;

@@ -1,7 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { companies, stagedBlocks } from '@/db/schema';
-import type { RawBlock, StagedBlockInput } from './types';
+import type { RawBlock } from './types';
+
+const CURRENT_PROMPT_VERSION = 'OMEN_AGENT_v3.0';
 
 // ---------------------------------------------------------------------------
 // Company upsert
@@ -34,25 +36,45 @@ export async function ensureCompany(ticker: string, name: string): Promise<numbe
 // Block staging
 // ---------------------------------------------------------------------------
 
-export async function stageBlock(block: RawBlock, companyId: number): Promise<number> {
-  // The AI returns snake_case fields; fall back to snake_case if camelCase is absent
-  const b = block as unknown as Record<string, unknown>;
-  const ticker      = (block.companyTicker ?? b['company_ticker'] ?? '') as string;
-  const category    = (block.category     ?? b['category']        ?? '') as string;
-  const tag         = (block.violationTag ?? b['violation_tag']   ?? '') as string;
-  const sources     = (block.sources      ?? b['sources']         ?? []) as { url?: string }[];
-
-  const input: StagedBlockInput = {
-    companyId,
-    title: `${ticker} ${category} — ${tag}`,
-    content: JSON.stringify(block),
-    violationTag: tag as RawBlock['violationTag'],
-    sourceUrl: sources[0]?.url ?? null,
-  };
-
+export async function stageBlock(
+  block: RawBlock,
+  companyId: number,
+  promptVersion: string = CURRENT_PROMPT_VERSION,
+): Promise<number> {
   const inserted = await db
     .insert(stagedBlocks)
-    .values(input as any)
+    .values({
+      blockId: block.blockId,
+      companyId,
+      category: block.category,
+      violationTag: block.violationTag,
+      title: block.formalSummary.slice(0, 120),
+      formalSummary: block.formalSummary,
+      regulatoryBasis: block.regulatoryBasis,
+      enforcementDetails: block.enforcementDetails,
+      jurisdiction: block.jurisdiction,
+      conversationalWhatHappened: block.conversationalWhatHappened,
+      conversationalWhyItMatters: block.conversationalWhyItMatters,
+      conversationalCompanyResponse: block.conversationalCompanyResponse,
+      amount: block.amount,
+      amountCurrency: block.amountCurrency,
+      affectedIndividuals: block.affectedIndividuals,
+      sourcesJson: JSON.stringify(block.sources),
+      sourceDisclaimersJson: JSON.stringify(block.sourceDisclaimers),
+      primarySourceUrl: block.sources?.[0]?.url ?? null,
+      verificationJson: JSON.stringify(block.verification),
+      confidenceScore: block.confidenceScore,
+      confidenceRouting: block.confidenceRouting,
+      brokenPromiseJson: block.brokenPromiseCheck
+        ? JSON.stringify(block.brokenPromiseCheck)
+        : null,
+      supersedesBlockId: block.supersedesBlockId ?? null,
+      promptVersion,
+      resolutionStatus: 'active',
+      violationDate: block.date,
+      researchedAt: block.researchedAt,
+      reviewStatus: block.confidenceRouting === 'AUTO_APPROVED' ? 'approved' : 'pending',
+    })
     .returning({ id: stagedBlocks.id });
 
   if (!inserted[0]) {
@@ -62,10 +84,14 @@ export async function stageBlock(block: RawBlock, companyId: number): Promise<nu
   return inserted[0].id;
 }
 
-export async function stageBlocks(blocks: RawBlock[], companyId: number): Promise<number[]> {
+export async function stageBlocks(
+  blocks: RawBlock[],
+  companyId: number,
+  promptVersion: string = CURRENT_PROMPT_VERSION,
+): Promise<number[]> {
   const results: number[] = [];
   for (const block of blocks) {
-    results.push(await stageBlock(block, companyId));
+    results.push(await stageBlock(block, companyId, promptVersion));
   }
   return results;
 }
