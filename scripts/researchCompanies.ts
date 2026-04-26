@@ -5,6 +5,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { researchCompany } from '../lib/agent/researchAgent';
+import { stageBlock as libStageBlock } from '../lib/agent/stageBlock';
 import { companies, stagedBlocks } from '../db/schema';
 import { pinBlock } from '../lib/ipfs';
 import type { Company, RawBlock, AgentRunConfig } from '../lib/agent/types';
@@ -74,7 +75,7 @@ async function upsertCompany(company: Company): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
-// Stage blocks — pin AUTO_APPROVED immediately, hold the rest
+// Stage blocks — pin AUTO_APPROVED immediately, then delegate insert to lib
 // ---------------------------------------------------------------------------
 
 async function stageBlocks(
@@ -88,7 +89,8 @@ async function stageBlocks(
   let pinned = 0;
 
   for (const block of blocks) {
-    // Skip duplicates
+    // Skip duplicates — the lib insert would throw a unique-constraint violation
+    // if we didn't guard here, since this script can be re-run mid-batch.
     const existing = await db
       .select({ id: stagedBlocks.id })
       .from(stagedBlocks)
@@ -100,12 +102,13 @@ async function stageBlocks(
       continue;
     }
 
-    // Pin AUTO_APPROVED blocks immediately; others wait for review
-    let ipfsCid: string | null = null;
+    // IPFS pinning is specific to this runner — pin AUTO_APPROVED blocks
+    // immediately before staging. The lib stageBlock() has no IPFS awareness.
+    let wasPinned = false;
     if (!dryRun && block.confidenceRouting === 'AUTO_APPROVED') {
       try {
         const result = await pinBlock(block);
-        ipfsCid = result.cid;
+        wasPinned = true;
         pinned++;
         console.log(`  [IPFS] ${block.blockId} → ${result.cid}`);
       } catch (err) {
@@ -115,42 +118,9 @@ async function stageBlocks(
       }
     }
 
-    await db.insert(stagedBlocks).values({
-      blockId: block.blockId,
-      companyId,
-      category: block.category,
-      violationTag: block.violationTag,
-      title: block.formalSummary.slice(0, 120),
-      formalSummary: block.formalSummary,
-      regulatoryBasis: block.regulatoryBasis,
-      enforcementDetails: block.enforcementDetails,
-      jurisdiction: block.jurisdiction,
-      conversationalWhatHappened: block.conversationalWhatHappened,
-      conversationalWhyItMatters: block.conversationalWhyItMatters,
-      conversationalCompanyResponse: block.conversationalCompanyResponse,
-      amount: block.amount,
-      amountCurrency: block.amountCurrency,
-      affectedIndividuals: block.affectedIndividuals,
-      sourcesJson: JSON.stringify(block.sources),
-      sourceDisclaimersJson: JSON.stringify(block.sourceDisclaimers),
-      primarySourceUrl: block.sources?.[0]?.url ?? null,
-      verificationJson: JSON.stringify(block.verification),
-      confidenceScore: block.confidenceScore,
-      confidenceRouting: block.confidenceRouting,
-      brokenPromiseJson: block.brokenPromiseCheck
-        ? JSON.stringify(block.brokenPromiseCheck)
-        : null,
-      supersedesBlockId: block.supersedesBlockId ?? null,
-      promptVersion: block.promptVersion ?? 'OMEN_AGENT_v3.0',
-      resolutionStatus: 'active' as const,
-      violationDate: block.date,
-      researchedAt: block.researchedAt,
-      // AUTO_APPROVED blocks get pinned and pre-approved
-      reviewStatus: block.confidenceRouting === 'AUTO_APPROVED' ? 'approved' : 'pending',
-    });
-
+    await libStageBlock(block, companyId);
     staged++;
-    console.log(`  [${block.confidenceRouting}] ${block.blockId} staged${ipfsCid ? ' + pinned' : ''}`);
+    console.log(`  [${block.confidenceRouting}] ${block.blockId} staged${wasPinned ? ' + pinned' : ''}`);
   }
 
   return { staged, pinned };
