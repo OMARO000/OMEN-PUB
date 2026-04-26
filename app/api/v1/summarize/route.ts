@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     requireTier(client, ['PROFESSIONAL', 'ENTERPRISE']);
 
-    const { allowed, remaining } = checkRateLimit(client.apiKey, client.tier);
+    const { allowed, remaining } = await checkRateLimit(client.apiKey, client.tier);
     if (!allowed) {
       await logRequest(client.apiKey, '/api/v1/summarize', null, null, ip, null, 429);
       return NextResponse.json(addWatermark({ error: 'Rate limit exceeded' }, client), { status: 429 });

@@ -1,47 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1773202102206,
-      "tag": "0000_salty_the_hood",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1773202200000,
-      "tag": "0001_users_payment_fields",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1773202300000,
-      "tag": "0002_users_companies_tracked",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1773202400000,
-      "tag": "0003_oca_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1773202500000,
-      "tag": "0004_api_clients_and_audit_log",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1773202600000,
-      "tag": "0005_contributions_and_payouts",
+      "version": "7",
+      "when": 1777174217793,
+      "tag": "0000_pg_baseline",
       "breakpoints": true
     }
   ]

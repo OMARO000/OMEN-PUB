@@ -1,6 +1,6 @@
+import { Redis } from '@upstash/redis';
 import type { ApiTier } from '@/db/schema';
 
-// Safeguard 3: Tier-based rate limiting
 const LIMITS: Record<ApiTier, number> = {
   STARTER: 10,
   PROFESSIONAL: 50,
@@ -8,32 +8,30 @@ const LIMITS: Record<ApiTier, number> = {
   RESTRICTED: 5,
 };
 
-interface Window {
-  count: number;
-  resetAt: number;
-}
+const WINDOW_SECONDS = 60;
 
-const store = new Map<string, Window>();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
-export function checkRateLimit(
+export async function checkRateLimit(
   apiKey: string,
   tier: ApiTier,
-): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const windowMs = 60_000; // 1 minute
+): Promise<{ allowed: boolean; remaining: number }> {
   const limit = LIMITS[tier];
+  const key = `rl:api:${apiKey}`;
 
-  const existing = store.get(apiKey);
+  const count = await redis.incr(key);
 
-  if (!existing || now > existing.resetAt) {
-    store.set(apiKey, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1 };
+  // Set TTL only on the first request in a window
+  if (count === 1) {
+    await redis.expire(key, WINDOW_SECONDS);
   }
 
-  if (existing.count >= limit) {
+  if (count > limit) {
     return { allowed: false, remaining: 0 };
   }
 
-  existing.count += 1;
-  return { allowed: true, remaining: limit - existing.count };
+  return { allowed: true, remaining: limit - count };
 }

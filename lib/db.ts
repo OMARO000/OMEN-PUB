@@ -1,8 +1,8 @@
-import Database from 'better-sqlite3';
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import postgres from 'postgres';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '@/db/schema';
 
-type OmenDb = BetterSQLite3Database<typeof schema> & { $client: Database.Database };
+type OmenDb = PostgresJsDatabase<typeof schema>;
 
 // Singleton pattern to survive Next.js HMR in development
 declare global {
@@ -10,10 +10,12 @@ declare global {
 }
 
 function createDb(): OmenDb {
-  const sqlite = new Database(process.env.DATABASE_URL ?? './omen.db');
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
-  return drizzle(sqlite, { schema }) as OmenDb;
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('DATABASE_URL is not set');
+
+  // prepare: false required for Supabase connection pooler (PgBouncer transaction mode)
+  const client = postgres(connectionString, { prepare: false });
+  return drizzle(client, { schema });
 }
 
 export const db: OmenDb = globalThis.__omenDb ?? createDb();

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     apiKey = client.apiKey;
 
     // Safeguard: rate limit
-    const { allowed, remaining } = checkRateLimit(client.apiKey, client.tier);
+    const { allowed, remaining } = await checkRateLimit(client.apiKey, client.tier);
     if (!allowed) {
       await logRequest(client.apiKey, '/api/v1/violations/search', null, null, ip, null, 429);
       return NextResponse.json(
