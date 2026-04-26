@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { stagedBlocks, companies } from '@/db/schema';
+import type { ResearchCategory } from '@/lib/agent/types';
 
 export const metadata: Metadata = {
   title: 'Ledger',
   description: 'The public ledger of corporate conduct, maintained by OMARO PBC.',
 };
-
-export const revalidate = 60;
 
 const CATEGORY_META: Record<string, { label: string; color: string }> = {
   PRI: { label: 'PRIVACY', color: '#7eb8d4' },
@@ -83,14 +82,51 @@ const SEED_BLOCKS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Filter URL builder (server-side, for dismissible tags)
+// ---------------------------------------------------------------------------
+
+function removeFilterUrl(
+  cats: string[],
+  tiers: number[],
+  removeCat?: string,
+  removeTier?: number,
+): string {
+  const nextCats = removeCat ? cats.filter(c => c !== removeCat) : cats;
+  const nextTiers = removeTier !== undefined ? tiers.filter(t => t !== removeTier) : tiers;
+  const p = new URLSearchParams();
+  if (nextCats.length > 0) p.set('cat', nextCats.join(','));
+  if (nextTiers.length > 0) p.set('tier', nextTiers.join(','));
+  const qs = p.toString();
+  return qs ? `/ledger?${qs}` : '/ledger';
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-export default async function LedgerPage() {
-  // Attempt live query; fall back to seed data if DB is empty
+type SearchParams = { cat?: string; tier?: string };
+
+export default async function LedgerPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const cats = (params.cat?.split(',').filter(Boolean) ?? []) as ResearchCategory[];
+  const tiers = params.tier?.split(',').map(Number).filter(n => !isNaN(n) && n > 0) ?? [];
+
+  const filtersActive = cats.length > 0 || tiers.length > 0;
+
+  // Build WHERE conditions
+  const conditions = [];
+  if (cats.length > 0) conditions.push(inArray(stagedBlocks.category, cats));
+  if (tiers.length > 0) conditions.push(inArray(companies.tier, tiers));
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
   let liveBlocks: typeof SEED_BLOCKS = [];
   let totalCount = 0;
   let categoryCounts: Record<string, number> = {};
+  let dbError = false;
 
   try {
     const rows = await db
@@ -114,27 +150,27 @@ export default async function LedgerPage() {
       })
       .from(stagedBlocks)
       .leftJoin(companies, eq(stagedBlocks.companyId, companies.id))
+      .where(whereClause)
       .orderBy(desc(stagedBlocks.createdAt))
       .limit(50);
 
-    if (rows.length > 0) {
-      liveBlocks = rows.map(r => ({
-        ...r,
-        primarySourceUrl: r.primarySourceUrl ?? '',
-        violationDate: r.violationDate ?? '',
-        researchedAt: r.researchedAt ?? '',
-        company: { name: r.companyName ?? '', slug: r.companySlug ?? '', ticker: r.companyTicker ?? '' },
-      }));
-      totalCount = rows.length;
-      for (const r of rows) {
-        categoryCounts[r.category] = (categoryCounts[r.category] ?? 0) + 1;
-      }
+    liveBlocks = rows.map(r => ({
+      ...r,
+      primarySourceUrl: r.primarySourceUrl ?? '',
+      violationDate: r.violationDate ?? '',
+      researchedAt: r.researchedAt ?? '',
+      company: { name: r.companyName ?? '', slug: r.companySlug ?? '', ticker: r.companyTicker ?? '' },
+    }));
+    totalCount = rows.length;
+    for (const r of rows) {
+      categoryCounts[r.category] = (categoryCounts[r.category] ?? 0) + 1;
     }
   } catch {
-    // DB not ready — use seed
+    dbError = true;
   }
 
-  const usingSeed = liveBlocks.length === 0;
+  // Only show seed data when the DB is unavailable
+  const usingSeed = dbError;
   const displayBlocks = usingSeed ? SEED_BLOCKS : liveBlocks;
 
   if (usingSeed) {
@@ -208,6 +244,75 @@ export default async function LedgerPage() {
         </div>
       )}
 
+      {/* Active filter strip */}
+      {!usingSeed && filtersActive && (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          marginBottom: '1.25rem',
+          alignItems: 'center',
+        }}>
+          <span style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--omen-muted)' }}>
+            FILTERS:
+          </span>
+          {cats.map(cat => (
+            <a
+              key={cat}
+              href={removeFilterUrl(cats, tiers, cat)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.65rem',
+                letterSpacing: '0.08em',
+                color: CATEGORY_META[cat]?.color ?? 'var(--omen-muted)',
+                border: `1px solid ${CATEGORY_META[cat]?.color ?? 'var(--omen-border)'}`,
+                padding: '0.2rem 0.5rem',
+                textDecoration: 'none',
+              }}
+              aria-label={`Remove ${CATEGORY_META[cat]?.label ?? cat} filter`}
+            >
+              {CATEGORY_META[cat]?.label ?? cat}
+              <span aria-hidden="true" style={{ opacity: 0.7 }}>×</span>
+            </a>
+          ))}
+          {tiers.map(tier => (
+            <a
+              key={tier}
+              href={removeFilterUrl(cats, tiers, undefined, tier)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.65rem',
+                letterSpacing: '0.08em',
+                color: 'var(--omen-muted)',
+                border: '1px solid var(--omen-border)',
+                padding: '0.2rem 0.5rem',
+                textDecoration: 'none',
+              }}
+              aria-label={`Remove tier ${tier} filter`}
+            >
+              TIER {tier}
+              <span aria-hidden="true" style={{ opacity: 0.7 }}>×</span>
+            </a>
+          ))}
+          <a
+            href="/ledger"
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.08em',
+              color: 'var(--omen-muted)',
+              textDecoration: 'underline',
+              marginLeft: '0.25rem',
+            }}
+          >
+            clear all
+          </a>
+        </div>
+      )}
+
       {/* Column headers */}
       <div style={{
         display: 'grid',
@@ -225,97 +330,102 @@ export default async function LedgerPage() {
         <span style={{ textAlign: 'right' }}>CONF</span>
       </div>
 
-      {/* Block list */}
-      <ol role="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {displayBlocks.map((block) => {
-          const catMeta = CATEGORY_META[block.category] ?? { label: block.category, color: 'var(--omen-muted)' };
-          const tagColor = TAG_COLORS[block.violationTag] ?? 'var(--omen-muted)';
-          const confPct = Math.round((block.confidenceScore ?? 0) * 100);
-
-          return (
-            <li
-              key={block.blockId}
-              style={{
-                borderBottom: '1px solid var(--omen-border)',
-                padding: '0.9rem 0',
-              }}
-            >
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 80px 90px 60px',
-                gap: '1rem',
-                alignItems: 'start',
-              }}>
-                {/* Title + company + block ID */}
-                <div>
-                  <Link
-                    href={`/ledger/${block.company.slug}`}
-                    style={{
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      color: 'var(--omen-text)',
-                      textDecoration: 'none',
-                      lineHeight: 1.4,
-                      display: 'block',
-                    }}
-                  >
-                    {block.title}
-                  </Link>
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--omen-accent)', letterSpacing: '0.06em' }}>
-                      {block.company.ticker}
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--omen-muted)', letterSpacing: '0.04em' }}>
-                      {block.blockId}
-                    </span>
-                    {block.violationDate && (
-                      <span style={{ fontSize: '0.65rem', color: 'var(--omen-muted)' }}>
-                        {block.violationDate}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Category */}
-                <span style={{
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.1em',
-                  color: catMeta.color,
-                  paddingTop: '0.1rem',
-                }}>
-                  {catMeta.label}
-                </span>
-
-                {/* Tag */}
-                <span style={{
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.08em',
-                  color: tagColor,
-                  paddingTop: '0.1rem',
-                }}>
-                  {block.violationTag.replace('_', ' ')}
-                </span>
-
-                {/* Confidence */}
-                <span style={{
-                  fontSize: '0.7rem',
-                  color: confPct >= 93 ? 'var(--omen-accent)' : 'var(--tag-bad)',
-                  textAlign: 'right',
-                  paddingTop: '0.1rem',
-                  fontWeight: 700,
-                }}>
-                  {confPct}%
-                </span>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-
-      {!usingSeed && totalCount === 0 && (
+      {/* No results — DB responded but filters matched nothing */}
+      {!usingSeed && liveBlocks.length === 0 && (
         <p style={{ color: 'var(--omen-muted)', fontSize: '0.875rem', marginTop: '2rem' }}>
-          -- NO RECORDS. AGENT RUN PENDING. --
+          {filtersActive
+            ? '-- NO RECORDS MATCH CURRENT FILTERS. --'
+            : '-- NO RECORDS. AGENT RUN PENDING. --'}
         </p>
+      )}
+
+      {/* Block list */}
+      {displayBlocks.length > 0 && (
+        <ol role="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {displayBlocks.map((block) => {
+            const catMeta = CATEGORY_META[block.category] ?? { label: block.category, color: 'var(--omen-muted)' };
+            const tagColor = TAG_COLORS[block.violationTag] ?? 'var(--omen-muted)';
+            const confPct = Math.round((block.confidenceScore ?? 0) * 100);
+
+            return (
+              <li
+                key={block.blockId}
+                style={{
+                  borderBottom: '1px solid var(--omen-border)',
+                  padding: '0.9rem 0',
+                }}
+              >
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 80px 90px 60px',
+                  gap: '1rem',
+                  alignItems: 'start',
+                }}>
+                  {/* Title + company + block ID */}
+                  <div>
+                    <Link
+                      href={`/ledger/${block.company.slug}`}
+                      style={{
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: 'var(--omen-text)',
+                        textDecoration: 'none',
+                        lineHeight: 1.4,
+                        display: 'block',
+                      }}
+                    >
+                      {block.title}
+                    </Link>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--omen-accent)', letterSpacing: '0.06em' }}>
+                        {block.company.ticker}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--omen-muted)', letterSpacing: '0.04em' }}>
+                        {block.blockId}
+                      </span>
+                      {block.violationDate && (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--omen-muted)' }}>
+                          {block.violationDate}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <span style={{
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.1em',
+                    color: catMeta.color,
+                    paddingTop: '0.1rem',
+                  }}>
+                    {catMeta.label}
+                  </span>
+
+                  {/* Tag */}
+                  <span style={{
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.08em',
+                    color: tagColor,
+                    paddingTop: '0.1rem',
+                  }}>
+                    {block.violationTag.replace('_', ' ')}
+                  </span>
+
+                  {/* Confidence */}
+                  <span style={{
+                    fontSize: '0.7rem',
+                    color: confPct >= 93 ? 'var(--omen-accent)' : 'var(--tag-bad)',
+                    textAlign: 'right',
+                    paddingTop: '0.1rem',
+                    fontWeight: 700,
+                  }}>
+                    {confPct}%
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       )}
     </div>
   );
