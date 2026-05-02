@@ -134,6 +134,8 @@ export const blocks = pgTable('blocks', {
   researchedAt: text('researched_at').notNull(),
   recordedAt: timestamp('recorded_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  domain: text('domain'),
+  domainVerified: boolean('domain_verified').notNull().default(false),
 });
 
 // ---------------------------------------------------------------------------
