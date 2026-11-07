@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { stagedBlocks, companies } from '@/db/schema';
+import { blocks, companies } from '@/db/schema';
 import type { ResearchCategory } from '@/lib/agent/types';
 
 export const metadata: Metadata = {
@@ -119,7 +119,7 @@ export default async function LedgerPage({
 
   // Build WHERE conditions
   const conditions = [];
-  if (cats.length > 0) conditions.push(inArray(stagedBlocks.category, cats));
+  if (cats.length > 0) conditions.push(inArray(blocks.category, cats));
   if (tiers.length > 0) conditions.push(inArray(companies.tier, tiers));
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -131,27 +131,27 @@ export default async function LedgerPage({
   try {
     const rows = await db
       .select({
-        id: stagedBlocks.id,
-        blockId: stagedBlocks.blockId,
-        companyId: stagedBlocks.companyId,
-        category: stagedBlocks.category,
-        violationTag: stagedBlocks.violationTag,
-        title: stagedBlocks.title,
-        formalSummary: stagedBlocks.formalSummary,
-        jurisdiction: stagedBlocks.jurisdiction,
-        confidenceScore: stagedBlocks.confidenceScore,
-        confidenceRouting: stagedBlocks.confidenceRouting,
-        primarySourceUrl: stagedBlocks.primarySourceUrl,
-        violationDate: stagedBlocks.violationDate,
-        researchedAt: stagedBlocks.researchedAt,
+        id: blocks.id,
+        blockId: blocks.blockId,
+        companyId: blocks.companyId,
+        category: blocks.category,
+        violationTag: blocks.violationTag,
+        title: blocks.title,
+        formalSummary: blocks.formalSummary,
+        jurisdiction: blocks.jurisdiction,
+        confidenceScore: blocks.confidenceScore,
+        confidenceRouting: blocks.confidenceRouting,
+        primarySourceUrl: blocks.primarySourceUrl,
+        violationDate: blocks.violationDate,
+        researchedAt: blocks.researchedAt,
         companyName: companies.name,
         companySlug: companies.slug,
         companyTicker: companies.ticker,
       })
-      .from(stagedBlocks)
-      .leftJoin(companies, eq(stagedBlocks.companyId, companies.id))
+      .from(blocks)
+      .leftJoin(companies, eq(blocks.companyId, companies.id))
       .where(whereClause)
-      .orderBy(desc(stagedBlocks.createdAt))
+      .orderBy(desc(blocks.createdAt))
       .limit(50);
 
     liveBlocks = rows.map(r => ({

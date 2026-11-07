@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { eq, desc } from 'drizzle-orm';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { companies, stagedBlocks } from '@/db/schema';
+import { companies, blocks as ledgerBlocks } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,9 +40,9 @@ async function getCompanyWithBlocks(slug: string) {
 
   const blocks = await db
     .select()
-    .from(stagedBlocks)
-    .where(eq(stagedBlocks.companyId, company[0].id))
-    .orderBy(desc(stagedBlocks.createdAt));
+    .from(ledgerBlocks)
+    .where(eq(ledgerBlocks.companyId, company[0].id))
+    .orderBy(desc(ledgerBlocks.createdAt));
 
   return { company: company[0], blocks };
 }
@@ -79,8 +79,8 @@ export default async function CompanyPage({
   if (!data) notFound();
 
   const { company, blocks } = data;
-  const autoApproved = blocks.filter(b => b.confidenceRouting === 'AUTO_APPROVED').length;
-  const pending = blocks.filter(b => b.reviewStatus === 'pending').length;
+  // Every record here was reviewed and approved by OMARO; high confidence is the research model's score of 93% or more.
+  const highConfidence = blocks.filter(b => b.confidenceRouting === 'AUTO_APPROVED' || b.confidenceScore >= 0.93).length;
   const catBreakdown = blocks.reduce<Record<string, number>>((acc, b) => {
     acc[b.category] = (acc[b.category] ?? 0) + 1;
     return acc;
@@ -129,15 +129,9 @@ export default async function CompanyPage({
             {blocks.length}
           </span>
           <span style={{ color: 'var(--omen-accent)' }}>
-            <span style={{ color: 'var(--omen-muted)' }}>AUTO-APPROVED  </span>
-            {autoApproved}
+            <span style={{ color: 'var(--omen-muted)' }}>HIGH CONFIDENCE  </span>
+            {highConfidence}
           </span>
-          {pending > 0 && (
-            <span style={{ color: 'var(--tag-broken-promise)' }}>
-              <span style={{ color: 'var(--omen-muted)' }}>PENDING REVIEW  </span>
-              {pending}
-            </span>
-          )}
           {Object.entries(catBreakdown).map(([cat, count]) => (
             <span key={cat} style={{ color: CATEGORY_META[cat]?.color ?? 'var(--omen-muted)' }}>
               {cat}  {count}
@@ -190,7 +184,7 @@ export default async function CompanyPage({
                     color: confPct >= 93 ? 'var(--omen-accent)' : 'var(--tag-bad)',
                     marginLeft: 'auto',
                   }}>
-                    {confPct >= 93 ? 'AUTO-APPROVED' : 'REVIEW'} · {confPct}%
+                    {confPct >= 93 ? 'HIGH CONFIDENCE · REVIEWED' : 'REVIEWED'} · {confPct}%
                   </span>
                 </div>
 

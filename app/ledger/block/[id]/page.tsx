@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { stagedBlocks, companies } from '@/db/schema';
+import { blocks, companies } from '@/db/schema';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -71,14 +71,14 @@ function getRelevantPillars(block: {
 async function getBlock(blockId: string) {
   const rows = await db
     .select({
-      block: stagedBlocks,
+      block: blocks,
       companyName: companies.name,
       companySlug: companies.slug,
       companyTicker: companies.ticker,
     })
-    .from(stagedBlocks)
-    .leftJoin(companies, eq(stagedBlocks.companyId, companies.id))
-    .where(eq(stagedBlocks.blockId, blockId))
+    .from(blocks)
+    .leftJoin(companies, eq(blocks.companyId, companies.id))
+    .where(eq(blocks.blockId, blockId))
     .limit(1);
   return rows[0] ?? null;
 }
@@ -178,7 +178,7 @@ export default async function BlockDetailPage({
           color: isAutoApproved ? 'var(--omen-accent)' : 'var(--tag-bad)',
           marginLeft: 'auto',
         }}>
-          {isAutoApproved ? '⬤ AUTO-APPROVED' : '⬤ PENDING REVIEW'} · {confPct}%
+          {isAutoApproved ? '⬤ HIGH CONFIDENCE · REVIEWED' : '⬤ REVIEWED'} · {confPct}%
         </span>
       </div>
 
