@@ -6,7 +6,7 @@ const agent = new https.Agent({ rejectUnauthorized: process.env.NODE_ENV === 'pr
 export async function edgarFetch(url: string): Promise<Response> {
   if (process.env.NODE_ENV === 'production') {
     return fetch(url, {
-      headers: { 'User-Agent': 'OMARO hello@omaro-pbc.org' },
+      headers: { 'User-Agent': 'OMARO hello@omaro.org' },
     })
   }
 
@@ -17,7 +17,7 @@ export async function edgarFetch(url: string): Promise<Response> {
       url,
       {
         agent,
-        headers: { 'User-Agent': 'OMARO hello@omaro-pbc.org' },
+        headers: { 'User-Agent': 'OMARO hello@omaro.org' },
       },
       (res) => {
         const chunks: Buffer[] = []

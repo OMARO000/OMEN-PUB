@@ -99,7 +99,7 @@ export default function RootLayout({
               }}>OMEN</span>
             </Link>
             <a
-              href="https://omaro.xyz"
+              href="https://omaro.org"
               target="_blank"
               rel="noopener noreferrer"
               style={{

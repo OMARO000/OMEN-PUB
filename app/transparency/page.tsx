@@ -156,7 +156,7 @@ export default function TransparencyPage() {
       </section>
 
       <p style={{ fontSize: '0.7rem', color: 'var(--omen-muted)', borderTop: '1px solid var(--omen-border)', paddingTop: '1.5rem' }}>
-        Questions about this report: legal@omaro.pub
+        Questions about this report: legal@omaro.org
       </p>
 
     </div>

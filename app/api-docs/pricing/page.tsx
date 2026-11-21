@@ -130,7 +130,7 @@ export default function ApiPricingPage() {
           To apply for API access, send your organization name, use case, and desired tier to:
         </p>
         <a
-          href="mailto:api@omaro.pub?subject=API%20Access%20Application"
+          href="mailto:api@omaro.org?subject=API%20Access%20Application"
           style={{
             display: 'inline-block',
             padding: '0.65rem 1.5rem',
@@ -144,7 +144,7 @@ export default function ApiPricingPage() {
           APPLY FOR API ACCESS →
         </a>
         <p style={{ marginTop: '0.75rem', fontSize: '0.65rem', color: 'var(--omen-muted)' }}>
-          api@omaro.pub — All applications reviewed within 5 business days.
+          api@omaro.org — All applications reviewed within 5 business days.
         </p>
       </div>
 
