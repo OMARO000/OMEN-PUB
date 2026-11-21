@@ -886,6 +886,7 @@ No spacing scale defined via tokens. Spacing is inline throughout in `rem` and `
 
 **Why does `proxy.ts` export `proxy` instead of `middleware`?** The `CLAUDE.md` says "Next.js 16 renamed `middleware.ts` to `proxy.ts`." This is incorrect — Next.js 16 does not rename middleware files. The actual convention is still `middleware.ts` at the root. The renamed file with a renamed export may mean this middleware is not actually active in the Next.js request pipeline.
 
+
 ---
 
 The research pipeline's own specification is kept in the private repository.
